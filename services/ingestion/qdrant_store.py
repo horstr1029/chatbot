@@ -73,6 +73,7 @@ def upsert_chunks(
             },
         )
         for chunk, vector in zip(chunks, vectors)
+        if vector  # skip chunks where embedding failed
     ]
 
     client.upsert(collection_name=COLLECTION, points=points)
