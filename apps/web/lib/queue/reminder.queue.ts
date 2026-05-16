@@ -42,10 +42,11 @@ export function startReminderWorker() {
 
       if (!request || request.status !== 'PENDING') return
 
-      const admins = await prisma.user.findMany({
-        where: { deptId, role: { in: ['DEPT_ADMIN', 'SUPER_ADMIN'] }, deletedAt: null },
-        select: { email: true, name: true },
+      const adminMemberships = await prisma.userDepartment.findMany({
+        where: { deptId, role: 'DEPT_ADMIN' },
+        select: { user: { select: { email: true, name: true } } },
       })
+      const admins = adminMemberships.map((m) => m.user)
 
       process.stdout.write(
         JSON.stringify({
