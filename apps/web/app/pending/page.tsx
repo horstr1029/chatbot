@@ -1,4 +1,4 @@
-import { UserButton } from '@clerk/nextjs'
+import { LogoutButton } from '@/components/auth/LogoutButton'
 
 export default function PendingPage() {
   return (
@@ -9,12 +9,12 @@ export default function PendingPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h1 className="text-xl font-semibold text-text-primary mb-2">Pending Approval</h1>
+        <h1 className="text-xl font-semibold text-text-primary mb-2">No Department Assigned</h1>
         <p className="text-[13px] text-text-secondary mb-6">
-          Your account is awaiting department assignment. Please contact your administrator.
+          Your account exists but has not been assigned to a department yet. Contact your administrator.
         </p>
         <div className="flex justify-center">
-          <UserButton />
+          <LogoutButton />
         </div>
       </div>
     </div>

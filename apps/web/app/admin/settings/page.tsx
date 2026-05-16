@@ -1,20 +1,16 @@
-import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/db/client'
 import { SettingsPanel } from '@/components/admin/SettingsPanel'
 
 export default async function SettingsPage() {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
-
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId, deletedAt: null },
-    select: { deptId: true, role: true },
-  })
-  if (!user?.deptId) redirect('/chat')
+  const session = await getSession()
+  if (!session.isLoggedIn) redirect('/login')
+  const deptId = session.deptId
+  if (!deptId) redirect('/chat')
 
   const dept = await prisma.department.findUnique({
-    where: { id: user.deptId },
+    where: { id: deptId },
     select: { id: true, name: true, systemPrompt: true, llmModel: true, embedModel: true },
   })
   if (!dept) redirect('/chat')

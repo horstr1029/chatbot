@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
-import { auth } from '@clerk/nextjs/server'
+import { getSession } from '@/lib/auth/session'
 
 export default async function HomePage() {
-  const { userId } = await auth()
-  if (userId) redirect('/chat')
-  redirect('/sign-in')
+  const session = await getSession()
+  if (session.isLoggedIn) redirect('/chat')
+  redirect('/login')
 }

@@ -1,32 +1,27 @@
 import { redirect } from 'next/navigation'
-import { auth } from '@clerk/nextjs/server'
+import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/db/client'
 import { AdminNav } from '@/components/admin/AdminNav'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
+  const session = await getSession()
+  if (!session.isLoggedIn) redirect('/login')
 
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId, deletedAt: null },
-    select: { role: true, deptId: true, dept: { select: { name: true } } },
-  })
-
-  if (!user?.deptId || (user.role !== 'DEPT_ADMIN' && user.role !== 'SUPER_ADMIN')) {
+  if (!session.deptId || (session.role !== 'DEPT_ADMIN' && session.role !== 'SUPER_ADMIN')) {
     redirect('/chat')
   }
 
   const pendingCount = await prisma.workflowRequest.count({
-    where: { deptId: user.deptId, status: 'PENDING' },
+    where: { deptId: session.deptId, status: 'PENDING' },
   })
+
+  const deptName = await prisma.department
+    .findUnique({ where: { id: session.deptId }, select: { name: true } })
+    .then((d) => d?.name ?? '')
 
   return (
     <div className="min-h-screen bg-surface-secondary">
-      <AdminNav
-        deptName={user.dept?.name ?? ''}
-        role={user.role}
-        pendingCount={pendingCount}
-      />
+      <AdminNav deptName={deptName} role={session.role} pendingCount={pendingCount} />
       <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
     </div>
   )

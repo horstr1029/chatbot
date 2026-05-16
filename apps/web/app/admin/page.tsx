@@ -1,22 +1,18 @@
-import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/db/client'
 
 export default async function AdminDashboardPage() {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
-
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId, deletedAt: null },
-    select: { deptId: true },
-  })
-  if (!user?.deptId) redirect('/chat')
+  const session = await getSession()
+  if (!session.isLoggedIn) redirect('/login')
+  const deptId = session.deptId
+  if (!deptId) redirect('/chat')
 
   const [userCount, docCount, pendingCount, totalWorkflows] = await Promise.all([
-    prisma.user.count({ where: { deptId: user.deptId, deletedAt: null } }),
-    prisma.documentSource.count({ where: { deptId: user.deptId, deletedAt: null } }),
-    prisma.workflowRequest.count({ where: { deptId: user.deptId, status: 'PENDING' } }),
-    prisma.workflowRequest.count({ where: { deptId: user.deptId } }),
+    prisma.user.count({ where: { deptId: deptId, deletedAt: null } }),
+    prisma.documentSource.count({ where: { deptId: deptId, deletedAt: null } }),
+    prisma.workflowRequest.count({ where: { deptId: deptId, status: 'PENDING' } }),
+    prisma.workflowRequest.count({ where: { deptId: deptId } }),
   ])
 
   const stats = [

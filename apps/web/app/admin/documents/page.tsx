@@ -1,20 +1,16 @@
-import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/db/client'
 import { DocumentsPanel } from '@/components/admin/DocumentsPanel'
 
 export default async function DocumentsPage() {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
-
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId, deletedAt: null },
-    select: { deptId: true },
-  })
-  if (!user?.deptId) redirect('/chat')
+  const session = await getSession()
+  if (!session.isLoggedIn) redirect('/login')
+  const deptId = session.deptId
+  if (!deptId) redirect('/chat')
 
   const sources = await prisma.documentSource.findMany({
-    where: { deptId: user.deptId, deletedAt: null },
+    where: { deptId, deletedAt: null },
     orderBy: { createdAt: 'desc' },
   })
 
@@ -26,7 +22,7 @@ export default async function DocumentsPage() {
           Manage the document sources indexed for your department.
         </p>
       </div>
-      <DocumentsPanel deptId={user.deptId} sources={sources} />
+      <DocumentsPanel deptId={deptId} sources={sources} />
     </div>
   )
 }

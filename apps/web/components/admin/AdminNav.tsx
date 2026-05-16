@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { UserButton } from '@clerk/nextjs'
+import { LogoutButton } from '@/components/auth/LogoutButton'
 
 interface AdminNavProps {
   deptName: string
@@ -52,7 +52,7 @@ export function AdminNav({ deptName, role, pendingCount }: AdminNavProps) {
             </Link>
           ))}
         </nav>
-        <UserButton />
+        <LogoutButton />
       </div>
     </header>
   )

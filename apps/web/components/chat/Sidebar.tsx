@@ -1,7 +1,7 @@
 'use client'
 
-import { UserButton } from '@clerk/nextjs'
 import type { ChatSession } from '@prisma/client'
+import { LogoutButton } from '@/components/auth/LogoutButton'
 
 interface SidebarProps {
   deptName: string
@@ -89,7 +89,7 @@ export function Sidebar({
           <p className="text-[13px] font-medium text-text-primary truncate">{userName}</p>
           <p className="text-[11px] text-text-muted">{roleLabel}</p>
         </div>
-        <UserButton />
+        <LogoutButton />
       </div>
     </div>
   )

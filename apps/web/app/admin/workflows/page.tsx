@@ -1,20 +1,16 @@
-import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/db/client'
 import { WorkflowsTable } from '@/components/admin/WorkflowsTable'
 
 export default async function WorkflowsPage() {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
-
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId, deletedAt: null },
-    select: { deptId: true },
-  })
-  if (!user?.deptId) redirect('/chat')
+  const session = await getSession()
+  if (!session.isLoggedIn) redirect('/login')
+  const deptId = session.deptId
+  if (!deptId) redirect('/chat')
 
   const requests = await prisma.workflowRequest.findMany({
-    where: { deptId: user.deptId },
+    where: { deptId },
     orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
     include: {
       requestedBy: { select: { name: true, email: true } },

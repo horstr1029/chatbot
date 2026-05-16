@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { UserButton } from '@clerk/nextjs'
+import { LogoutButton } from '@/components/auth/LogoutButton'
 
 const links = [
   { href: '/superadmin', label: 'Overview' },
@@ -32,7 +32,7 @@ export function SuperAdminNav() {
             </Link>
           ))}
         </nav>
-        <UserButton />
+        <LogoutButton />
       </div>
     </header>
   )

@@ -1,20 +1,16 @@
-import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/db/client'
 import { UsersPanel } from '@/components/admin/UsersPanel'
 
 export default async function UsersPage() {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
-
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId, deletedAt: null },
-    select: { deptId: true, role: true },
-  })
-  if (!user?.deptId) redirect('/chat')
+  const session = await getSession()
+  if (!session.isLoggedIn) redirect('/login')
+  const deptId = session.deptId
+  if (!deptId) redirect('/chat')
 
   const users = await prisma.user.findMany({
-    where: { deptId: user.deptId, deletedAt: null },
+    where: { deptId, deletedAt: null },
     orderBy: { createdAt: 'asc' },
     select: { id: true, name: true, email: true, role: true, createdAt: true },
   })
@@ -27,7 +23,7 @@ export default async function UsersPage() {
           Manage users and roles in your department.
         </p>
       </div>
-      <UsersPanel deptId={user.deptId} currentUserRole={user.role} users={users} />
+      <UsersPanel deptId={deptId} currentUserRole={session.role} users={users} />
     </div>
   )
 }

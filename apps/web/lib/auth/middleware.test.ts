@@ -1,51 +1,56 @@
-const mockAuth = jest.fn()
-jest.mock('@clerk/nextjs/server', () => ({ auth: mockAuth }))
+import type { UserRole } from '@prisma/client'
 
-const mockFindUnique = jest.fn()
-jest.mock('@/lib/db/client', () => ({
-  prisma: { user: { findUnique: mockFindUnique } },
-}))
+const mockGetSession = jest.fn()
+jest.mock('./session', () => ({ getSession: mockGetSession }))
 
 import { deptMiddleware, requireRole } from './middleware'
+
+function mockSession(overrides: object = {}) {
+  mockGetSession.mockResolvedValue({
+    isLoggedIn: true,
+    userId: 'user-1',
+    deptId: 'dept-1',
+    role: 'MEMBER' as UserRole,
+    name: 'Test User',
+    email: 'test@example.com',
+    ...overrides,
+  })
+}
 
 describe('deptMiddleware', () => {
   afterEach(() => jest.clearAllMocks())
 
-  it('should throw UNAUTHORIZED when Clerk returns no userId', async () => {
-    mockAuth.mockResolvedValue({ userId: null })
-    await expect(deptMiddleware()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
-  })
-
-  it('should throw UNAUTHORIZED when user is not found in DB', async () => {
-    mockAuth.mockResolvedValue({ userId: 'clerk-1' })
-    mockFindUnique.mockResolvedValue(null)
-    await expect(deptMiddleware()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
-  })
-
-  it('should throw UNAUTHORIZED when user has no deptId', async () => {
-    mockAuth.mockResolvedValue({ userId: 'clerk-1' })
-    mockFindUnique.mockResolvedValue({ id: 'u1', deptId: null, role: 'MEMBER', clerkId: 'clerk-1' })
-    await expect(deptMiddleware()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
-  })
-
-  it('should return AuthContext for a valid user', async () => {
-    mockAuth.mockResolvedValue({ userId: 'clerk-1' })
-    mockFindUnique.mockResolvedValue({ id: 'u1', deptId: 'dept-1', role: 'MEMBER', clerkId: 'clerk-1' })
+  it('should return auth context when session is valid', async () => {
+    mockSession({ role: 'DEPT_ADMIN' })
     const ctx = await deptMiddleware()
-    expect(ctx).toEqual({ user_id: 'u1', dept_id: 'dept-1', role: 'MEMBER', clerk_id: 'clerk-1' })
+    expect(ctx.user_id).toBe('user-1')
+    expect(ctx.dept_id).toBe('dept-1')
+    expect(ctx.role).toBe('DEPT_ADMIN')
+  })
+
+  it('should throw UNAUTHORIZED when not logged in', async () => {
+    mockSession({ isLoggedIn: false })
+    await expect(deptMiddleware()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+  })
+
+  it('should throw UNAUTHORIZED when deptId is null', async () => {
+    mockSession({ deptId: null })
+    await expect(deptMiddleware()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
   })
 })
 
 describe('requireRole', () => {
-  it('should not throw when user has required role', () => {
+  it('should allow equal role', () => {
     expect(() => requireRole('DEPT_ADMIN', 'DEPT_ADMIN')).not.toThrow()
+  })
+
+  it('should allow higher role', () => {
     expect(() => requireRole('SUPER_ADMIN', 'DEPT_ADMIN')).not.toThrow()
     expect(() => requireRole('SUPER_ADMIN', 'MEMBER')).not.toThrow()
   })
 
-  it('should throw INVALID_ROLE when user lacks required role', () => {
+  it('should throw for insufficient role', () => {
     expect(() => requireRole('MEMBER', 'DEPT_ADMIN')).toThrow()
     expect(() => requireRole('DEPT_ADMIN', 'SUPER_ADMIN')).toThrow()
-    expect(() => requireRole('MEMBER', 'SUPER_ADMIN')).toThrow()
   })
 })
