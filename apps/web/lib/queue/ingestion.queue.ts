@@ -22,6 +22,7 @@ export type DeleteFileJob = {
 export type FullResyncJob = {
   type: 'FULL_RESYNC'
   deptId: string
+  sourceId?: string   // when set, only this source is resynced
 }
 
 export type IngestionJobData = SyncFileJob | DeleteFileJob | FullResyncJob
