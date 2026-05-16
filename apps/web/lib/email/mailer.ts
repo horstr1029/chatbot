@@ -1,22 +1,31 @@
 import nodemailer from 'nodemailer'
+import { getSmtpSettings } from '@/lib/settings/systemSettings'
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT ?? 587),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-})
-
-const FROM = process.env.SMTP_FROM ?? `"Company Chatbot" <noreply@${process.env.SMTP_HOST}>`
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
+async function createTransport() {
+  const s = await getSmtpSettings()
+  return nodemailer.createTransport({
+    host: s.host,
+    port: Number(s.port),
+    secure: s.secure === 'true',
+    auth: s.user ? { user: s.user, pass: s.pass } : undefined,
+  })
+}
+
 export async function sendWelcomeEmail(to: string, name: string | null, tempPassword: string) {
+  const s = await getSmtpSettings()
+  if (!s.host || !s.user) {
+    process.stderr.write(`[email] SMTP not configured — skipping welcome email to ${to}\n`)
+    return
+  }
+
+  const transport = await createTransport()
+  const from = s.from || `"Company Chatbot" <${s.user}>`
   const displayName = name ?? to
-  await transporter.sendMail({
-    from: FROM,
+
+  await transport.sendMail({
+    from,
     to,
     subject: 'Welcome to Company Chatbot — your account is ready',
     html: `
