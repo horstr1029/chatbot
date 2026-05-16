@@ -113,17 +113,30 @@ Full spec: `.claude/rules/design-system.md` — read this before building any UI
 See `docker/.env.example` for the full list. Key ones:
 
 ```bash
-ANTHROPIC_API_KEY=
-OLLAMA_BASE_URL=http://localhost:11434
+# Auth (iron-session — no Clerk)
+SESSION_SECRET=                    # min 32-char random string
+
+# LLM
+OLLAMA_BASE_URL=http://localhost:11211   # non-standard port on this server
 OPENAI_API_KEY=                    # for embeddings (optional if using Ollama)
+
+# Infra
 QDRANT_URL=http://localhost:6333
-QDRANT_API_KEY=
-DATABASE_URL=
-REDIS_URL=
+DATABASE_URL=postgresql://chatbot:chatbot@localhost:5432/chatbot
+REDIS_URL=redis://localhost:6379
 N8N_BASE_URL=http://localhost:5678
 N8N_API_KEY=
-CLERK_SECRET_KEY=
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+
+# Email (SMTP) — also configurable in Super Admin → Settings
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+
+# App
+NEXT_PUBLIC_APP_URL=https://chat.gloworm.org.za
 ```
 
 ---
@@ -157,21 +170,23 @@ pnpm typecheck                     # TypeScript check only
 
 - GitHub repo:   https://github.com/horstr1029/chatbot
 - Clone (SSH):   git@github.com:horstr1029/chatbot.git
-- CI/CD:         GitHub Actions — `.github/workflows/deploy.yml`
-                 Pushes to `main` → test → build Docker images → SSH deploy to server
+- SSH key:       ~/.ssh/chatbot_deploy  (registered on GitHub + server)
 
-- Server (public):  horstr@mstssh.gloworm.org.za
+- Server (public):  horstr@mstssh.gloworm.org.za  (via Cloudflare tunnel)
 - Server (LAN):     horstr@192.168.104.35
-- SSH key:          ~/.ssh/chatbot_deploy
-- SSH aliases:      `chatbot-prod` (public) / `chatbot-local` (LAN)
-- plink (Windows):  use `chatbot_deploy.ppk` with LAN IP when on office network
+- Project dir:      ~/company-chatbot
+- Process manager:  PM2  (app name: chatbot-web)
+- App config:       ~/company-chatbot/ecosystem.config.js
+- DB:               postgresql://chatbot:chatbot@localhost:5432/chatbot
 
-Manual deploy scripts:
-- Linux/Mac:     `./scripts/deploy.sh` (add `--local` for LAN)
-- Windows/plink: `scripts\deploy-local.bat`
+Deploy scripts (all do: pull → npm install → prisma db push → build → pm2 restart):
+- Linux/Mac:   `./scripts/deploy.sh`           (public tunnel)
+- Linux/Mac:   `./scripts/deploy.sh --local`   (LAN)
+- Windows:     `.\scripts\deploy.ps1`          (public tunnel)
+- Windows:     `.\scripts\deploy.ps1 -Local`   (LAN)
+- Windows bat: `scripts\deploy-local.bat`      (LAN shortcut)
 
-Full setup instructions: `docs/SSH_GITHUB_SETUP.md`
-Deployment rules:        `.claude/rules/deployment.md`
+Deployment rules: `.claude/rules/deployment.md`
 
 ---
 
