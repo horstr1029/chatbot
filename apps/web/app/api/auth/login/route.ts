@@ -14,6 +14,7 @@ export async function POST(req: Request) {
     where: { email: String(email).toLowerCase().trim(), deletedAt: null },
     select: {
       id: true, passwordHash: true, name: true, email: true, isSuperAdmin: true,
+      mustChangePassword: true,
       departments: { select: { deptId: true, role: true } },
     },
   })
@@ -28,6 +29,11 @@ export async function POST(req: Request) {
   session.name = user.name ?? user.email
   session.email = user.email
   session.deptIds = user.departments.map((d) => d.deptId)
+
+  if (user.mustChangePassword) {
+    await session.save()
+    return NextResponse.json({ data: { redirect: '/change-password' }, error: null })
+  }
 
   if (user.isSuperAdmin) {
     session.role = 'SUPER_ADMIN'

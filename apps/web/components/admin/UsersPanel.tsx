@@ -24,7 +24,7 @@ interface UsersPanelProps {
   users: UserRow[]
 }
 
-const defaultForm = { name: '', email: '', password: '', role: 'MEMBER' as DeptRole }
+const defaultForm = { name: '', email: '', role: 'MEMBER' as DeptRole }
 
 export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) {
   const router = useRouter()
@@ -102,18 +102,6 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 className="w-full rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600"
                 placeholder="jane@company.com"
-              />
-            </div>
-            <div>
-              <label className="text-[13px] font-medium text-text-primary mb-1 block">Password</label>
-              <input
-                required
-                type="password"
-                minLength={8}
-                value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                className="w-full rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600"
-                placeholder="Min. 8 characters"
               />
             </div>
             <div>

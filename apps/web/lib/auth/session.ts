@@ -5,11 +5,12 @@ import type { UserRole } from './types'
 export interface SessionData {
   isLoggedIn: boolean
   userId: string
-  deptId: string | null       // active department
-  role: UserRole              // role in active dept, or SUPER_ADMIN
-  deptIds: string[]           // all depts the user belongs to
+  deptId: string | null
+  role: UserRole
+  deptIds: string[]
   name: string
   email: string
+  mustChangePassword: boolean
 }
 
 export const sessionOptions = {

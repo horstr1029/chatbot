@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/client'
 import { deptMiddleware, requireRole } from '@/lib/auth/middleware'
 import { hashPassword } from '@/lib/auth/password'
+import { generateTempPassword } from '@/lib/auth/tempPassword'
+import { sendWelcomeEmail } from '@/lib/email/mailer'
 import { withErrorHandler, apiResponse } from '@/lib/api/response'
 import { z } from 'zod'
 
 const CreateUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
   name: z.string().min(1).optional(),
   role: z.enum(['MEMBER', 'DEPT_ADMIN']).default('MEMBER'),
   deptId: z.string().optional(),
@@ -23,8 +24,8 @@ export const POST = withErrorHandler(async (req: Request) => {
   const existing = await prisma.user.findUnique({
     where: { email: body.email.toLowerCase().trim() },
   })
+
   if (existing) {
-    // User exists — add them to the dept if not already a member
     const alreadyMember = await prisma.userDepartment.findUnique({
       where: { userId_deptId: { userId: existing.id, deptId: targetDeptId } },
     })
@@ -37,7 +38,8 @@ export const POST = withErrorHandler(async (req: Request) => {
     return NextResponse.json(apiResponse.success({ id: existing.id, email: existing.email, name: existing.name, role: body.role, createdAt: existing.createdAt }), { status: 201 })
   }
 
-  const passwordHash = await hashPassword(body.password)
+  const tempPassword = generateTempPassword()
+  const passwordHash = await hashPassword(tempPassword)
 
   const user = await prisma.$transaction(async (tx) => {
     const u = await tx.user.create({
@@ -45,6 +47,7 @@ export const POST = withErrorHandler(async (req: Request) => {
         email: body.email.toLowerCase().trim(),
         passwordHash,
         name: body.name ?? null,
+        mustChangePassword: true,
       },
       select: { id: true, email: true, name: true, createdAt: true },
     })
@@ -52,6 +55,11 @@ export const POST = withErrorHandler(async (req: Request) => {
       data: { userId: u.id, deptId: targetDeptId, role: body.role },
     })
     return u
+  })
+
+  // Send welcome email — non-blocking, don't fail the request if email fails
+  sendWelcomeEmail(user.email, user.name, tempPassword).catch((err) => {
+    process.stderr.write(`[email] Failed to send welcome email to ${user.email}: ${err}\n`)
   })
 
   return NextResponse.json(apiResponse.success({ ...user, role: body.role }), { status: 201 })
