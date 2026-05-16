@@ -11,9 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-# Install headless OpenCV before unstructured to avoid libGL dependency
-RUN pip install --no-cache-dir opencv-python-headless && \
-    pip install --no-cache-dir -r requirements.txt
+# Install requirements, then force-replace opencv with headless build to drop libGL dep
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir --force-reinstall opencv-python-headless
 
 COPY . .
 
