@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Chatbot — Deploy Status</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; color: #111827; padding: 40px 24px; }
+    .container { max-width: 820px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .subtitle { color: #6b7280; font-size: 14px; margin-bottom: 32px; }
+    .section { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+    .section h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+    .badge.done { background: #f0fdf4; color: #16a34a; }
+    .badge.pending { background: #fffbeb; color: #d97706; }
+    .badge.blocked { background: #fef2f2; color: #dc2626; }
+    .item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+    .item:last-child { border-bottom: none; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+    .dot.green { background: #16a34a; }
+    .dot.amber { background: #d97706; }
+    .dot.red { background: #dc2626; }
+    .item-title { font-size: 13.5px; font-weight: 500; }
+    .item-desc { font-size: 12.5px; color: #6b7280; margin-top: 2px; }
+    code { font-family: 'SF Mono', Consolas, monospace; font-size: 12px; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+    pre { font-family: 'SF Mono', Consolas, monospace; font-size: 12px; background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; line-height: 1.6; margin-top: 8px; }
+    .highlight { color: #fbbf24; }
+    .cmd-block { margin-top: 12px; }
+    .cmd-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 6px; }
+    .key-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6; gap: 12px; }
+    .key-row:last-child { border-bottom: none; }
+    .key-name { font-size: 12.5px; font-family: 'SF Mono', Consolas, monospace; font-weight: 600; color: #2563eb; }
+    .key-source { font-size: 12px; color: #6b7280; }
+    .key-required { font-size: 11px; font-weight: 600; color: #dc2626; background: #fef2f2; padding: 2px 6px; border-radius: 4px; }
+    .note { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; font-size: 12.5px; color: #1e40af; margin-top: 12px; }
+    a { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Company Chatbot — Deploy Status</h1>
+    <p class="subtitle">Server: mstssh.gloworm.org.za &nbsp;|&nbsp; Project dir: ~/company-chatbot &nbsp;|&nbsp; App port: 3000</p>
+
+    <!-- ── INFRASTRUCTURE ──────────────────────────────── -->
+    <div class="section">
+      <h2>Infrastructure <span class="badge done">✓ Running</span></h2>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">PostgreSQL 16</div><div class="item-desc">Container: <code>company-chatbot-dev-postgres-1</code> &nbsp;·&nbsp; Port 5432 &nbsp;·&nbsp; DB: <code>chatbot</code></div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Redis 7</div><div class="item-desc">Container: <code>company-chatbot-dev-redis-1</code> &nbsp;·&nbsp; Port 6379</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Qdrant vector store</div><div class="item-desc">Container: <code>company-chatbot-dev-qdrant-1</code> &nbsp;·&nbsp; Port 6333</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">n8n workflow engine</div><div class="item-desc">Container: <code>n8n</code> &nbsp;·&nbsp; Port 5678 &nbsp;·&nbsp; API key already configured</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Python ingestion service</div><div class="item-desc">Rebuilt from new code &nbsp;·&nbsp; Port 8001</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Database schema</div><div class="item-desc">Prisma <code>db push</code> run — all tables created</div></div></div>
+    </div>
+
+    <!-- ── MISSING API KEYS ────────────────────────────── -->
+    <div class="section">
+      <h2>Missing API Keys <span class="badge blocked">Action Required</span></h2>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:14px;">
+        These must be filled in before running <code>npm run build</code> and starting the app.
+        Edit the file at: <code>~/company-chatbot/apps/web/.env.production.local</code>
+      </p>
+
+      <div class="key-row">
+        <div><div class="key-name">ANTHROPIC_API_KEY</div><div class="key-source">From <a href="https://console.anthropic.com/keys" target="_blank">console.anthropic.com/keys</a></div></div>
+        <span class="key-required">Required</span>
+      </div>
+      <div class="key-row">
+        <div><div class="key-name">OPENAI_API_KEY</div><div class="key-source">From <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a> — used for text embeddings</div></div>
+        <span class="key-required">Required</span>
+      </div>
+      <div class="key-row">
+        <div><div class="key-name">NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</div><div class="key-source">From <a href="https://dashboard.clerk.com" target="_blank">dashboard.clerk.com</a> → Your app → API Keys → <code>pk_live_...</code></div></div>
+        <span class="key-required">Required for build</span>
+      </div>
+      <div class="key-row">
+        <div><div class="key-name">CLERK_SECRET_KEY</div><div class="key-source">Same page → <code>sk_live_...</code></div></div>
+        <span class="key-required">Required</span>
+      </div>
+      <div class="key-row">
+        <div><div class="key-name">CLERK_WEBHOOK_SECRET</div><div class="key-source">Clerk dashboard → Webhooks → create endpoint pointing to <code>https://yourdomain/api/webhooks/clerk</code> → copy signing secret <code>whsec_...</code></div></div>
+        <span class="key-required">Required</span>
+      </div>
+      <div class="key-row">
+        <div><div class="key-name">NEXT_PUBLIC_APP_URL</div><div class="key-source">The public URL of the app, e.g. <code>https://chat.yourdomain.com</code></div></div>
+        <span class="key-required">Required</span>
+      </div>
+
+      <div class="note">
+        ⚠️ <strong>OpenWebUI is on port 80.</strong> The chatbot runs on port 3000. If you want it on a subdomain (e.g. <code>chat.yourdomain.com</code>), set up a Cloudflare tunnel or nginx reverse proxy pointing to <code>localhost:3000</code>.
+      </div>
+    </div>
+
+    <!-- ── DEPLOY STEPS ────────────────────────────────── -->
+    <div class="section">
+      <h2>Steps to Complete Deployment <span class="badge pending">Waiting on keys</span></h2>
+
+      <div class="item">
+        <div class="dot amber"></div>
+        <div>
+          <div class="item-title">1. SSH into the server and fill in the env file</div>
+          <div class="cmd-block">
+            <div class="cmd-label">Run in your terminal</div>
+            <pre>ssh -i C:/Users/Horst/.ssh/chatbot_deploy \
+  -o ProxyCommand="\"C:/Program Files (x86)/cloudflared/cloudflared.exe\" access ssh --hostname %h" \
+  horstr@mstssh.gloworm.org.za
+
+<span class="highlight">nano ~/company-chatbot/apps/web/.env.production.local</span></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="dot amber"></div>
+        <div>
+          <div class="item-title">2. Build the Next.js app</div>
+          <div class="item-desc">Run on the server after filling in the env file</div>
+          <div class="cmd-block">
+            <pre>cd ~/company-chatbot/apps/web
+npm run build</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="dot amber"></div>
+        <div>
+          <div class="item-title">3. Start with PM2</div>
+          <div class="cmd-block">
+            <pre>cd ~/company-chatbot
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup   # follow the printed command to enable autostart</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="dot amber"></div>
+        <div>
+          <div class="item-title">4. Set up Clerk Webhook</div>
+          <div class="item-desc">So new Clerk users are synced to the database</div>
+          <div class="item-desc" style="margin-top:6px;">In <a href="https://dashboard.clerk.com" target="_blank">Clerk dashboard</a> → Webhooks → Add endpoint:<br>
+          URL: <code>https://yourdomain/api/webhooks/clerk</code><br>
+          Events: <code>user.created</code>, <code>user.updated</code>, <code>user.deleted</code></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="dot amber"></div>
+        <div>
+          <div class="item-title">5. (Optional) Set up Cloudflare tunnel or nginx for HTTPS on a subdomain</div>
+          <div class="item-desc">Since port 80 is taken by OpenWebUI, route a subdomain to port 3000</div>
+          <div class="cmd-block">
+            <pre># Example nginx config at /etc/nginx/sites-available/chatbot
+server {
+    listen 80;
+    server_name chat.yourdomain.com;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="dot amber"></div>
+        <div>
+          <div class="item-title">6. Add GitHub Actions secrets (for auto-deploy on git push)</div>
+          <div class="item-desc">Go to <a href="https://github.com/horstr1029/chatbot/settings/secrets/actions" target="_blank">github.com/horstr1029/chatbot → Settings → Secrets</a></div>
+          <div class="item-desc" style="margin-top:6px;">
+            <code>DEPLOY_HOST</code> = <code>mstssh.gloworm.org.za</code><br>
+            <code>DEPLOY_USER</code> = <code>horstr</code><br>
+            <code>DEPLOY_SSH_KEY</code> = contents of <code>C:\Users\Horst\.ssh\chatbot_deploy</code> (private key)<br>
+            <code>DEPLOY_PORT</code> = <code>22</code><br>
+            <code>ANTHROPIC_API_KEY</code> = your key (used in test job)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GITHUB ACTIONS ──────────────────────────────── -->
+    <div class="section">
+      <h2>GitHub Actions CI/CD <span class="badge pending">Needs secrets</span></h2>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">
+        Each push to <code>main</code> runs: tests → build Docker images → SSH deploy.<br>
+        Currently blocked until GitHub secrets are added (see step 6 above).
+      </p>
+      <div class="item"><div class="dot amber"></div><div><div class="item-title">Test job</div><div class="item-desc">Needs <code>ANTHROPIC_API_KEY</code> secret to run unit tests</div></div></div>
+      <div class="item"><div class="dot amber"></div><div><div class="item-title">Build job</div><div class="item-desc">Builds and pushes Docker images to <code>ghcr.io/horstr1029/chatbot-web</code></div></div></div>
+      <div class="item"><div class="dot amber"></div><div><div class="item-title">Deploy job</div><div class="item-desc">Needs <code>DEPLOY_HOST</code>, <code>DEPLOY_USER</code>, <code>DEPLOY_SSH_KEY</code> secrets to SSH into server</div></div></div>
+    </div>
+
+    <!-- ── WHAT'S BUILT ────────────────────────────────── -->
+    <div class="section">
+      <h2>What's Built &amp; Ready <span class="badge done">Complete</span></h2>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Full Next.js 14 app with Clerk auth, Tailwind UI design system</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Streaming chat with RAG — department-scoped Qdrant vector search + citations</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">n8n workflow designer — Claude generates workflows, admins approve/reject</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Department admin panel — documents, users, settings (system prompt + LLM picker)</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Super admin panel — create/delete departments, system overview</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Ollama integration — live model picker, graceful offline fallback</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Python ingestion service — Google Drive, SharePoint, local files → Qdrant</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">Rate limiting (20 req/min), structured logging, 48h workflow reminder jobs</div></div></div>
+      <div class="item"><div class="dot green"></div><div><div class="item-title">26 unit tests passing — RAG dept isolation, intent classification, auth, workflow approval</div></div></div>
+    </div>
+
+    <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:24px;">Generated by Claude Code &nbsp;·&nbsp; Last updated: 2026-05-16</p>
+  </div>
+</body>
+</html>
