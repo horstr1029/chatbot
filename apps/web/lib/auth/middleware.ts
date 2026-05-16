@@ -11,11 +11,11 @@ export type AuthContext = {
 export async function deptMiddleware(): Promise<AuthContext> {
   const session = await getSession()
   if (!session.isLoggedIn || !session.userId) throw Errors.UNAUTHORIZED()
-  if (!session.deptId) throw Errors.UNAUTHORIZED()
+  if (!session.deptId && session.role !== 'SUPER_ADMIN') throw Errors.UNAUTHORIZED()
 
   return {
     user_id: session.userId,
-    dept_id: session.deptId,
+    dept_id: session.deptId ?? '',
     role: session.role,
   }
 }
