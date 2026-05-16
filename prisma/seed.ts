@@ -8,21 +8,21 @@ const departments = [
     systemPrompt:
       'You are the HR department assistant. Help employees with HR policies, leave requests, onboarding, and benefits questions.',
     llmModel: 'claude-sonnet-4-20250514',
-    embedModel: 'text-embedding-3-small',
+    embedModel: 'nomic-embed-text',
   },
   {
     name: 'Installation',
     systemPrompt:
       'You are the Installation department assistant. Help technicians with installation guides, safety procedures, and equipment specifications.',
     llmModel: 'claude-sonnet-4-20250514',
-    embedModel: 'text-embedding-3-small',
+    embedModel: 'nomic-embed-text',
   },
   {
     name: 'Finance',
     systemPrompt:
       'You are the Finance department assistant. Help employees with expense policies, budgeting guidelines, and financial procedures.',
     llmModel: 'claude-sonnet-4-20250514',
-    embedModel: 'text-embedding-3-small',
+    embedModel: 'nomic-embed-text',
   },
 ]
 
