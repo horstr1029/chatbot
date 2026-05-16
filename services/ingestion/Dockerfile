@@ -11,9 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-# Install requirements, then force-replace opencv with headless build to drop libGL dep
+# Install requirements, then swap opencv-python for headless (no libGL needed in container)
 RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir --force-reinstall opencv-python-headless
+    pip uninstall -y opencv-python && \
+    pip install --no-cache-dir opencv-python-headless
 
 COPY . .
 
