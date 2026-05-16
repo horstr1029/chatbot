@@ -60,10 +60,28 @@ Respond with a JSON object containing:
 
   const text = res.choices[0]?.message?.content ?? ''
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('No JSON found in workflow design response')
+  // Extract outermost JSON object — find balanced braces
+  const start = text.indexOf('{')
+  if (start === -1) throw new Error('No JSON found in workflow design response')
+  let depth = 0
+  let end = -1
+  for (let i = start; i < text.length; i++) {
+    if (text[i] === '{') depth++
+    else if (text[i] === '}') { depth--; if (depth === 0) { end = i; break } }
+  }
+  if (end === -1) throw new Error('Malformed JSON in workflow design response')
+  const jsonStr = text.slice(start, end + 1)
 
-  const parsed = JSON.parse(jsonMatch[0]) as DesignResult
+  // Strip trailing commas before } or ] (common LLM output issue)
+  const cleaned = jsonStr.replace(/,(\s*[}\]])/g, '$1')
+
+  let parsed: DesignResult
+  try {
+    parsed = JSON.parse(cleaned) as DesignResult
+  } catch (e) {
+    throw new Error(`Could not parse workflow JSON: ${e instanceof Error ? e.message : String(e)}`)
+  }
+
   if (!parsed.description || !parsed.workflow) {
     throw new Error('Invalid workflow design response structure')
   }
