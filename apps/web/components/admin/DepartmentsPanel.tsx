@@ -20,6 +20,17 @@ export function DepartmentsPanel({ departments }: DepartmentsPanelProps) {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState<string | null>(null)
 
+  async function handleManage(deptId: string) {
+    setLoading(`manage-${deptId}`)
+    await fetch('/api/auth/switch-dept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deptId }),
+    })
+    router.push('/admin')
+    router.refresh()
+  }
+
   async function handleAdd() {
     if (!name.trim()) return
     setLoading('add')
@@ -63,7 +74,14 @@ export function DepartmentsPanel({ departments }: DepartmentsPanelProps) {
                   <td className="px-4 py-3 text-[12px] text-text-muted font-mono">{d.llmModel}</td>
                   <td className="px-4 py-3 text-[13px] text-text-secondary">{d._count.users}</td>
                   <td className="px-4 py-3 text-[13px] text-text-secondary">{d._count.documentSources}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
+                    <button
+                      disabled={loading === `manage-${d.id}`}
+                      onClick={() => handleManage(d.id)}
+                      className="text-[12px] text-brand-600 hover:bg-brand-50 px-2 py-1 rounded transition-colors disabled:opacity-50 font-medium"
+                    >
+                      {loading === `manage-${d.id}` ? '…' : 'Manage'}
+                    </button>
                     <button
                       disabled={loading === `del-${d.id}`}
                       onClick={() => handleDelete(d.id, d.name)}
