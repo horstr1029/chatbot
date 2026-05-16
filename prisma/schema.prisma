@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Department {
+  id           String   @id @default(cuid())
+  name         String
+  systemPrompt String?  @db.Text
+  llmModel     String   @default("claude-sonnet-4-20250514")
+  embedModel   String   @default("text-embedding-3-small")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users            User[]
+  documentSources  DocumentSource[]
+  workflowRequests WorkflowRequest[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  role      UserRole @default(MEMBER)
+  deptId    String?
+  dept      Department? @relation(fields: [deptId], references: [id])
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  workflowRequests  WorkflowRequest[] @relation("requestedBy")
+  workflowApprovals WorkflowRequest[] @relation("approvedBy")
+  chatSessions      ChatSession[]
+}
+
+enum UserRole {
+  MEMBER
+  DEPT_ADMIN
+  SUPER_ADMIN
+}
+
+model DocumentSource {
+  id         String     @id @default(cuid())
+  name       String
+  sourceType SourceType
+  sourceUrl  String?
+  sourcePath String?
+  deptId     String
+  dept       Department @relation(fields: [deptId], references: [id])
+  isGlobal   Boolean    @default(false)
+  lastSynced DateTime?
+  createdAt  DateTime   @default(now())
+  deletedAt  DateTime?
+}
+
+enum SourceType {
+  GOOGLE_DRIVE
+  SHAREPOINT
+  LOCAL
+}
+
+model WorkflowRequest {
+  id              String                @id @default(cuid())
+  userMessage     String                @db.Text
+  description     String                @db.Text
+  n8nWorkflowId   String?
+  n8nResumeUrl    String?
+  status          WorkflowRequestStatus @default(PENDING)
+  rejectionReason String?
+  deptId          String
+  dept            Department            @relation(fields: [deptId], references: [id])
+  requestedById   String
+  requestedBy     User                  @relation("requestedBy", fields: [requestedById], references: [id])
+  approvedById    String?
+  approvedBy      User?                 @relation("approvedBy", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+}
+
+enum WorkflowRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXECUTED
+  FAILED
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  deptId    String
+  title     String?
+  messages  Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

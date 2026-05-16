@@ -1,0 +1,33 @@
+import { prisma } from '@/lib/db/client'
+import { deptMiddleware, requireRole } from '@/lib/auth/middleware'
+import { apiResponse, withErrorHandler } from '@/lib/api/response'
+import { z } from 'zod'
+
+const createSchema = z.object({
+  name: z.string().min(1),
+  systemPrompt: z.string().optional(),
+  llmModel: z.string().optional(),
+  embedModel: z.string().optional(),
+})
+
+export const GET = withErrorHandler(async () => {
+  const ctx = await deptMiddleware()
+  requireRole(ctx.role, 'SUPER_ADMIN')
+
+  const departments = await prisma.department.findMany({
+    orderBy: { name: 'asc' },
+    include: { _count: { select: { users: true, documentSources: true } } },
+  })
+
+  return apiResponse.success(departments)
+})
+
+export const POST = withErrorHandler(async (req) => {
+  const ctx = await deptMiddleware()
+  requireRole(ctx.role, 'SUPER_ADMIN')
+
+  const body = createSchema.parse(await req.json())
+
+  const dept = await prisma.department.create({ data: body })
+  return apiResponse.success(dept, undefined, 201)
+})

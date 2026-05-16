@@ -1,0 +1,27 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.20
+pydantic==2.10.4
+pydantic-settings==2.7.0
+
+# Document parsing (0.18.x supports Python 3.14)
+unstructured[all-docs]==0.18.32
+
+# Chunking
+tiktoken==0.8.0
+
+# Embeddings
+openai==1.58.1
+httpx==0.28.1
+
+# Vector store
+qdrant-client==1.12.2
+
+# Source connectors
+watchdog==6.0.0
+google-api-python-client==2.157.0
+google-auth==2.37.0
+httpx==0.28.1
+
+# Utilities
+python-dotenv==1.0.1
