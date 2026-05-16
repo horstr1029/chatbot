@@ -9,13 +9,18 @@ export default async function ChatPage() {
   if (!session.isLoggedIn) redirect('/login')
   if (!session.deptId) redirect('/pending')
 
-  const [dept, sessions] = await Promise.all([
+  const [dept, sessions, memberships] = await Promise.all([
     getDept(session.deptId),
     prisma.chatSession.findMany({
       where: { userId: session.userId },
       orderBy: { updatedAt: 'desc' },
       take: 20,
       select: { id: true, title: true, updatedAt: true },
+    }),
+    prisma.userDepartment.findMany({
+      where: { userId: session.userId },
+      select: { deptId: true, dept: { select: { name: true } } },
+      orderBy: { dept: { name: 'asc' } },
     }),
   ])
 
@@ -27,6 +32,8 @@ export default async function ChatPage() {
     .slice(0, 2)
     .toUpperCase()
 
+  const availableDepts = memberships.map((m) => ({ id: m.deptId, name: m.dept.name }))
+
   return (
     <ChatInterface
       deptName={dept.name}
@@ -35,6 +42,7 @@ export default async function ChatPage() {
       userRole={session.role}
       initials={initials}
       sessions={sessions}
+      availableDepts={availableDepts}
     />
   )
 }

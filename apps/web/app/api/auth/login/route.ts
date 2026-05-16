@@ -12,7 +12,10 @@ export async function POST(req: Request) {
 
   const user = await prisma.user.findUnique({
     where: { email: String(email).toLowerCase().trim(), deletedAt: null },
-    select: { id: true, passwordHash: true, name: true, email: true, role: true, deptId: true },
+    select: {
+      id: true, passwordHash: true, name: true, email: true, isSuperAdmin: true,
+      departments: { select: { deptId: true, role: true } },
+    },
   })
 
   if (!user || !(await verifyPassword(String(password), user.passwordHash))) {
@@ -22,11 +25,34 @@ export async function POST(req: Request) {
   const session = await getSession()
   session.isLoggedIn = true
   session.userId = user.id
-  session.deptId = user.deptId
-  session.role = user.role
   session.name = user.name ?? user.email
   session.email = user.email
-  await session.save()
+  session.deptIds = user.departments.map((d) => d.deptId)
 
-  return NextResponse.json({ data: { ok: true }, error: null })
+  if (user.isSuperAdmin) {
+    session.role = 'SUPER_ADMIN'
+    session.deptId = null
+    await session.save()
+    return NextResponse.json({ data: { redirect: '/superadmin' }, error: null })
+  }
+
+  if (user.departments.length === 0) {
+    session.role = 'MEMBER'
+    session.deptId = null
+    await session.save()
+    return NextResponse.json({ data: { redirect: '/pending' }, error: null })
+  }
+
+  if (user.departments.length === 1) {
+    session.deptId = user.departments[0].deptId
+    session.role = user.departments[0].role
+    await session.save()
+    return NextResponse.json({ data: { redirect: '/chat' }, error: null })
+  }
+
+  // Multiple departments — let the user pick
+  session.deptId = null
+  session.role = 'MEMBER'
+  await session.save()
+  return NextResponse.json({ data: { redirect: '/select-dept' }, error: null })
 }

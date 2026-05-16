@@ -17,7 +17,7 @@ model Department {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  users            User[]
+  members          UserDepartment[]
   documentSources  DocumentSource[]
   workflowRequests WorkflowRequest[]
 }
@@ -27,15 +27,30 @@ model User {
   email        String   @unique
   passwordHash String
   name         String?
-  role         UserRole @default(MEMBER)
-  deptId       String?
-  dept         Department? @relation(fields: [deptId], references: [id])
+  isSuperAdmin Boolean  @default(false)
   createdAt    DateTime @default(now())
   deletedAt    DateTime?
 
+  departments       UserDepartment[]
   workflowRequests  WorkflowRequest[] @relation("requestedBy")
   workflowApprovals WorkflowRequest[] @relation("approvedBy")
   chatSessions      ChatSession[]
+}
+
+model UserDepartment {
+  userId    String
+  deptId    String
+  role      DeptRole @default(MEMBER)
+  user      User       @relation(fields: [userId], references: [id])
+  dept      Department @relation(fields: [deptId], references: [id])
+  createdAt DateTime   @default(now())
+
+  @@id([userId, deptId])
+}
+
+enum DeptRole {
+  MEMBER
+  DEPT_ADMIN
 }
 
 enum UserRole {

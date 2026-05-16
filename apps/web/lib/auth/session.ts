@@ -5,8 +5,9 @@ import type { UserRole } from '@prisma/client'
 export interface SessionData {
   isLoggedIn: boolean
   userId: string
-  deptId: string | null
-  role: UserRole
+  deptId: string | null       // active department
+  role: UserRole              // role in active dept, or SUPER_ADMIN
+  deptIds: string[]           // all depts the user belongs to
   name: string
   email: string
 }
@@ -18,7 +19,7 @@ export const sessionOptions = {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax' as const,
-    maxAge: 60 * 60 * 8, // 8 hours
+    maxAge: 60 * 60 * 8,
   },
 }
 

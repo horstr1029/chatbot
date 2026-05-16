@@ -9,11 +9,19 @@ export default async function UsersPage() {
   const deptId = session.deptId
   if (!deptId) redirect('/chat')
 
-  const users = await prisma.user.findMany({
-    where: { deptId, deletedAt: null },
+  const members = await prisma.userDepartment.findMany({
+    where: { deptId },
     orderBy: { createdAt: 'asc' },
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
+    select: {
+      role: true,
+      createdAt: true,
+      user: { select: { id: true, name: true, email: true, deletedAt: true } },
+    },
   })
+
+  const users = members
+    .filter((m) => !m.user.deletedAt)
+    .map((m) => ({ ...m.user, role: m.role, createdAt: m.createdAt }))
 
   return (
     <div>

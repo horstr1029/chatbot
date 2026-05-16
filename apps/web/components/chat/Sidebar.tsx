@@ -1,27 +1,38 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { ChatSession } from '@prisma/client'
 import { LogoutButton } from '@/components/auth/LogoutButton'
 
+interface DeptOption { id: string; name: string }
+
 interface SidebarProps {
   deptName: string
+  deptId: string
   userName: string
   userRole: string
   sessions: Pick<ChatSession, 'id' | 'title' | 'updatedAt'>[]
   activeSessionId: string | null
   onNewChat: () => void
   onSelectSession: (id: string) => void
+  availableDepts: DeptOption[]
 }
 
 export function Sidebar({
   deptName,
+  deptId,
   userName,
   userRole,
   sessions,
   activeSessionId,
   onNewChat,
   onSelectSession,
+  availableDepts,
 }: SidebarProps) {
+  const router = useRouter()
+  const [switching, setSwitching] = useState(false)
+
   const initials = userName
     .split(' ')
     .map((w) => w[0])
@@ -29,19 +40,47 @@ export function Sidebar({
     .slice(0, 2)
     .toUpperCase()
 
-  const roleLabel = userRole === 'DEPT_ADMIN' ? 'Dept Admin' : userRole === 'SUPER_ADMIN' ? 'Super Admin' : 'Member'
+  const roleLabel =
+    userRole === 'DEPT_ADMIN' ? 'Dept Admin' :
+    userRole === 'SUPER_ADMIN' ? 'Super Admin' : 'Member'
+
+  async function switchDept(id: string) {
+    if (id === deptId) return
+    setSwitching(true)
+    await fetch('/api/auth/switch-dept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deptId: id }),
+    })
+    router.refresh()
+    setSwitching(false)
+  }
+
+  const multiDept = availableDepts.length > 1
 
   return (
     <div className="w-[220px] flex-shrink-0 bg-white border-r border-border flex flex-col h-full">
-      {/* Brand */}
       <div className="px-4 pt-4 pb-2">
         <p className="text-[14px] font-semibold text-text-primary">Company Chatbot</p>
       </div>
 
-      {/* Dept badge */}
+      {/* Dept badge / switcher */}
       <div className="mx-4 mt-1 rounded-md bg-brand-50 border border-brand-100 px-3 py-2">
         <p className="text-[11px] font-medium text-brand-600 uppercase tracking-wide">Department</p>
-        <p className="text-[13px] font-semibold text-text-primary mt-0.5">{deptName}</p>
+        {multiDept ? (
+          <select
+            value={deptId}
+            disabled={switching}
+            onChange={(e) => switchDept(e.target.value)}
+            className="mt-0.5 w-full bg-transparent text-[13px] font-semibold text-text-primary border-none outline-none cursor-pointer disabled:opacity-60"
+          >
+            {availableDepts.map((d) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        ) : (
+          <p className="text-[13px] font-semibold text-text-primary mt-0.5">{deptName}</p>
+        )}
       </div>
 
       {/* New chat */}

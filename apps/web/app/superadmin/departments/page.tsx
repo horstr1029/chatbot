@@ -5,9 +5,21 @@ export default async function DepartmentsPage() {
   const departments = await prisma.department.findMany({
     orderBy: { name: 'asc' },
     include: {
-      _count: { select: { users: { where: { deletedAt: null } }, documentSources: { where: { deletedAt: null } } } },
+      _count: {
+        select: {
+          members: true,
+          documentSources: { where: { deletedAt: null } },
+        },
+      },
     },
   })
+
+  const rows = departments.map((d) => ({
+    id: d.id,
+    name: d.name,
+    llmModel: d.llmModel,
+    _count: { users: d._count.members, documentSources: d._count.documentSources },
+  }))
 
   return (
     <div>
@@ -15,7 +27,7 @@ export default async function DepartmentsPage() {
         <h1 className="text-xl font-semibold text-text-primary">Departments</h1>
         <p className="text-[13px] text-text-secondary mt-1">Create and manage all departments.</p>
       </div>
-      <DepartmentsPanel departments={departments} />
+      <DepartmentsPanel departments={rows} />
     </div>
   )
 }

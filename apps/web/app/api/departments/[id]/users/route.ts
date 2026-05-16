@@ -10,7 +10,7 @@ type Ctx = { params: { id: string } }
 
 const updateSchema = z.object({
   userId: z.string(),
-  role: z.enum(['MEMBER', 'DEPT_ADMIN', 'SUPER_ADMIN']).optional(),
+  role: z.enum(['MEMBER', 'DEPT_ADMIN']).optional(),
   remove: z.boolean().optional(),
 })
 
@@ -20,11 +20,20 @@ export const GET = withErrorHandler(async (_req, ctx) => {
   requireRole(authCtx.role, 'DEPT_ADMIN')
   if (authCtx.role !== 'SUPER_ADMIN' && authCtx.dept_id !== params.id) throw Errors.FORBIDDEN()
 
-  const users = await prisma.user.findMany({
-    where: { deptId: params.id, deletedAt: null },
+  const members = await prisma.userDepartment.findMany({
+    where: { deptId: params.id },
     orderBy: { createdAt: 'asc' },
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
+    select: {
+      role: true,
+      createdAt: true,
+      user: { select: { id: true, name: true, email: true, deletedAt: true } },
+    },
   })
+
+  const users = members
+    .filter((m) => !m.user.deletedAt)
+    .map((m) => ({ ...m.user, role: m.role, createdAt: m.createdAt }))
+
   return apiResponse.success(users)
 })
 
@@ -35,23 +44,25 @@ export const POST = withErrorHandler(async (req, ctx) => {
   if (authCtx.role !== 'SUPER_ADMIN' && authCtx.dept_id !== params.id) throw Errors.FORBIDDEN()
 
   const body = updateSchema.parse(await req.json())
-  const user = await prisma.user.findUnique({ where: { id: body.userId } })
-  if (!user) throw Errors.NOT_FOUND('User')
+
+  const membership = await prisma.userDepartment.findUnique({
+    where: { userId_deptId: { userId: body.userId, deptId: params.id } },
+  })
+  if (!membership) throw Errors.NOT_FOUND('User membership')
 
   if (body.remove) {
-    await prisma.user.update({
-      where: { id: body.userId },
-      data: { deletedAt: new Date() },
+    await prisma.userDepartment.delete({
+      where: { userId_deptId: { userId: body.userId, deptId: params.id } },
     })
     return apiResponse.success({ removed: true })
   }
 
-  await prisma.user.update({
-    where: { id: body.userId },
-    data: {
-      ...(body.role ? { role: body.role } : {}),
-      deptId: params.id,
-    },
-  })
+  if (body.role) {
+    await prisma.userDepartment.update({
+      where: { userId_deptId: { userId: body.userId, deptId: params.id } },
+      data: { role: body.role },
+    })
+  }
+
   return apiResponse.success({ updated: true })
 })

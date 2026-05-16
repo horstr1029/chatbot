@@ -8,6 +8,8 @@ import { MessageBubble, TypingIndicator } from './MessageBubble'
 import { Composer } from './Composer'
 import type { Citation } from './CitationChip'
 
+interface DeptOption { id: string; name: string }
+
 interface ChatInterfaceProps {
   deptName: string
   deptId: string
@@ -15,16 +17,19 @@ interface ChatInterfaceProps {
   userRole: string
   initials: string
   sessions: Pick<ChatSession, 'id' | 'title' | 'updatedAt'>[]
+  availableDepts: DeptOption[]
 }
 
 type StoredMessage = { id: string; role: 'user' | 'assistant'; content: string }
 
 export function ChatInterface({
   deptName,
+  deptId,
   userName,
   userRole,
   initials,
   sessions: initialSessions,
+  availableDepts,
 }: ChatInterfaceProps) {
   const [sessions, setSessions] = useState(initialSessions)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
@@ -120,12 +125,14 @@ export function ChatInterface({
     <div className="flex h-screen overflow-hidden bg-surface-secondary">
       <Sidebar
         deptName={deptName}
+        deptId={deptId}
         userName={userName}
         userRole={userRole}
         sessions={sessions}
         activeSessionId={activeSessionId}
         onNewChat={handleNewChat}
         onSelectSession={handleSelectSession}
+        availableDepts={availableDepts}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

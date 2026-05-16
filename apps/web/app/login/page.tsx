@@ -24,7 +24,8 @@ export default function LoginPage() {
     setLoading(false)
 
     if (res.ok) {
-      router.push('/chat')
+      const body = await res.json()
+      router.push(body.data?.redirect ?? '/chat')
       router.refresh()
     } else {
       const body = await res.json()

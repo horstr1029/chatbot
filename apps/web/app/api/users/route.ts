@@ -18,28 +18,41 @@ export const POST = withErrorHandler(async (req: Request) => {
   requireRole(ctx.role, 'DEPT_ADMIN')
 
   const body = CreateUserSchema.parse(await req.json())
-
   const targetDeptId = ctx.role === 'SUPER_ADMIN' && body.deptId ? body.deptId : ctx.dept_id
 
   const existing = await prisma.user.findUnique({
     where: { email: body.email.toLowerCase().trim() },
   })
   if (existing) {
-    return NextResponse.json(apiResponse.error('EMAIL_TAKEN', 'A user with that email already exists'), { status: 409 })
+    // User exists — add them to the dept if not already a member
+    const alreadyMember = await prisma.userDepartment.findUnique({
+      where: { userId_deptId: { userId: existing.id, deptId: targetDeptId } },
+    })
+    if (alreadyMember) {
+      return NextResponse.json(apiResponse.error('EMAIL_TAKEN', 'This user is already in the department'), { status: 409 })
+    }
+    await prisma.userDepartment.create({
+      data: { userId: existing.id, deptId: targetDeptId, role: body.role },
+    })
+    return NextResponse.json(apiResponse.success({ id: existing.id, email: existing.email, name: existing.name, role: body.role, createdAt: existing.createdAt }), { status: 201 })
   }
 
   const passwordHash = await hashPassword(body.password)
 
-  const user = await prisma.user.create({
-    data: {
-      email: body.email.toLowerCase().trim(),
-      passwordHash,
-      name: body.name ?? null,
-      role: body.role,
-      deptId: targetDeptId,
-    },
-    select: { id: true, email: true, name: true, role: true, createdAt: true },
+  const user = await prisma.$transaction(async (tx) => {
+    const u = await tx.user.create({
+      data: {
+        email: body.email.toLowerCase().trim(),
+        passwordHash,
+        name: body.name ?? null,
+      },
+      select: { id: true, email: true, name: true, createdAt: true },
+    })
+    await tx.userDepartment.create({
+      data: { userId: u.id, deptId: targetDeptId, role: body.role },
+    })
+    return u
   })
 
-  return NextResponse.json(apiResponse.success(user), { status: 201 })
+  return NextResponse.json(apiResponse.success({ ...user, role: body.role }), { status: 201 })
 })
