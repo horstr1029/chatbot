@@ -2,19 +2,19 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { UserRole } from '@prisma/client'
+import type { DeptRole } from '@prisma/client'
+import type { UserRole } from '@/lib/auth/types'
 
-const ROLE_LABELS: Record<UserRole, string> = {
+const ROLE_LABELS: Record<DeptRole, string> = {
   MEMBER: 'Member',
   DEPT_ADMIN: 'Dept Admin',
-  SUPER_ADMIN: 'Super Admin',
 }
 
 interface UserRow {
   id: string
   name: string | null
   email: string
-  role: UserRole
+  role: DeptRole
   createdAt: Date
 }
 
@@ -24,7 +24,7 @@ interface UsersPanelProps {
   users: UserRow[]
 }
 
-const defaultForm = { name: '', email: '', password: '', role: 'MEMBER' as UserRole }
+const defaultForm = { name: '', email: '', password: '', role: 'MEMBER' as DeptRole }
 
 export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) {
   const router = useRouter()
@@ -35,7 +35,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
 
   const canEdit = currentUserRole === 'SUPER_ADMIN' || currentUserRole === 'DEPT_ADMIN'
 
-  async function handleRoleChange(userId: string, role: UserRole) {
+  async function handleRoleChange(userId: string, role: DeptRole) {
     setLoading(userId)
     await fetch(`/api/departments/${deptId}/users`, {
       method: 'POST',
@@ -120,14 +120,11 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
               <label className="text-[13px] font-medium text-text-primary mb-1 block">Role</label>
               <select
                 value={form.role}
-                onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as UserRole }))}
+                onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as DeptRole }))}
                 className="w-full rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600"
               >
                 <option value="MEMBER">Member</option>
                 <option value="DEPT_ADMIN">Dept Admin</option>
-                {currentUserRole === 'SUPER_ADMIN' && (
-                  <option value="SUPER_ADMIN">Super Admin</option>
-                )}
               </select>
             </div>
             <div className="col-span-2 flex items-center gap-3">
@@ -166,14 +163,11 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
                       <select
                         value={u.role}
                         disabled={loading === u.id}
-                        onChange={(e) => handleRoleChange(u.id, e.target.value as UserRole)}
+                        onChange={(e) => handleRoleChange(u.id, e.target.value as DeptRole)}
                         className="rounded border border-border px-2 py-1 text-[12px] text-text-secondary focus:outline-none focus:ring-2 focus:ring-brand-600 disabled:opacity-50"
                       >
                         <option value="MEMBER">Member</option>
                         <option value="DEPT_ADMIN">Dept Admin</option>
-                        {currentUserRole === 'SUPER_ADMIN' && (
-                          <option value="SUPER_ADMIN">Super Admin</option>
-                        )}
                       </select>
                     ) : (
                       <span className="text-[12px] text-text-secondary">{ROLE_LABELS[u.role]}</span>

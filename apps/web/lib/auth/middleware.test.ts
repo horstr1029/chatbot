@@ -1,4 +1,4 @@
-import type { UserRole } from '@prisma/client'
+import type { UserRole } from './types'
 
 const mockGetSession = jest.fn()
 jest.mock('./session', () => ({ getSession: mockGetSession }))

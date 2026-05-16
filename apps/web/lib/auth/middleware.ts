@@ -1,6 +1,6 @@
 import { getSession } from './session'
 import { Errors } from '@/lib/errors'
-import type { UserRole } from '@prisma/client'
+import type { UserRole } from './types'
 
 export type AuthContext = {
   user_id: string

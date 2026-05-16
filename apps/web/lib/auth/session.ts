@@ -1,6 +1,6 @@
 import { getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
-import type { UserRole } from '@prisma/client'
+import type { UserRole } from './types'
 
 export interface SessionData {
   isLoggedIn: boolean
