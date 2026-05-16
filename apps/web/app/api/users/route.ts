@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/client'
 import { deptMiddleware, requireRole } from '@/lib/auth/middleware'
 import { hashPassword } from '@/lib/auth/password'
-import { withErrorHandler } from '@/lib/api/errorHandler'
-import { apiResponse } from '@/lib/api/response'
+import { withErrorHandler, apiResponse } from '@/lib/api/response'
 import { z } from 'zod'
 
 const CreateUserSchema = z.object({

@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import type { Department } from '@prisma/client'
 import { getTemplatesForDept, summariseTemplates } from './templates'
 
@@ -45,16 +45,20 @@ Respond with a JSON object containing:
   "workflow": { ...valid n8n workflow JSON... }
 }`
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
-  const res = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 4096,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userMessage }],
+  const client = new OpenAI({
+    baseURL: (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434') + '/v1',
+    apiKey: 'ollama',
   })
 
-  const text = (res.content[0] as { text: string }).text
+  const res = await client.chat.completions.create({
+    model: dept.llmModel,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage },
+    ],
+  })
+
+  const text = res.choices[0]?.message?.content ?? ''
 
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('No JSON found in workflow design response')
