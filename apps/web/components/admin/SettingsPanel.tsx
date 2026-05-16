@@ -15,16 +15,9 @@ interface SettingsPanelProps {
   dept: DeptConfig
 }
 
-const CLOUD_MODELS = [
-  { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4', badge: 'Cloud' },
-  { value: 'claude-opus-4-20250514', label: 'Claude Opus 4', badge: 'Cloud' },
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', badge: 'Cloud' },
-]
-
 const EMBED_MODELS = [
-  { value: 'text-embedding-3-small', label: 'OpenAI text-embedding-3-small', badge: 'Cloud' },
-  { value: 'text-embedding-3-large', label: 'OpenAI text-embedding-3-large', badge: 'Cloud' },
-  { value: 'nomic-embed-text', label: 'nomic-embed-text (Ollama)', badge: 'Local' },
+  { value: 'nomic-embed-text', label: 'nomic-embed-text' },
+  { value: 'mxbai-embed-large', label: 'mxbai-embed-large' },
 ]
 
 interface OllamaModel { name: string }
@@ -70,9 +63,6 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
     router.refresh()
   }
 
-  const isCloudModel = CLOUD_MODELS.some((m) => m.value === form.llmModel)
-  const selectedEmbed = EMBED_MODELS.find((m) => m.value === form.embedModel)
-
   return (
     <div className="space-y-5">
       <div className="bg-white border border-border rounded-lg p-5 space-y-4">
@@ -86,61 +76,36 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
               onChange={(e) => setForm((f) => ({ ...f, llmModel: e.target.value }))}
               className="flex-1 rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600"
             >
-              <optgroup label="Cloud (Anthropic)">
-                {CLOUD_MODELS.map((m) => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </optgroup>
-              {ollamaAvailable === true && ollamaModels.length > 0 && (
-                <optgroup label="Local (Ollama)">
-                  {ollamaModels.map((m) => (
-                    <option key={m.name} value={m.name}>{m.name}</option>
-                  ))}
-                </optgroup>
-              )}
-              {ollamaAvailable === false && !isCloudModel && (
-                <optgroup label="Local (Ollama — unavailable)">
-                  <option value={form.llmModel}>{form.llmModel}</option>
-                </optgroup>
+              {ollamaModels.length > 0 ? (
+                ollamaModels.map((m) => (
+                  <option key={m.name} value={m.name}>{m.name}</option>
+                ))
+              ) : (
+                <option value={form.llmModel}>{form.llmModel}</option>
               )}
             </select>
-            <span className={`text-[11px] font-medium px-2 py-1 rounded whitespace-nowrap ${
-              isCloudModel
-                ? 'bg-brand-50 text-brand-600'
-                : 'bg-surface-tertiary text-text-secondary'
-            }`}>
-              {isCloudModel ? 'Cloud' : ollamaAvailable === false ? 'Local (offline)' : 'Local'}
+            <span className="text-[11px] font-medium px-2 py-1 rounded whitespace-nowrap bg-surface-tertiary text-text-secondary">
+              {ollamaAvailable === false ? 'Offline' : 'Local'}
             </span>
           </div>
           {ollamaAvailable === false && (
             <p className="text-[12px] text-amber-600 mt-1">
-              Local AI model unavailable. Please contact your admin.
+              Ollama is unreachable. Check that it is running on the server.
             </p>
           )}
         </div>
 
         <div>
           <label className="text-[13px] font-medium text-text-primary mb-1 block">Embedding model</label>
-          <div className="flex items-center gap-2">
-            <select
-              value={form.embedModel}
-              onChange={(e) => setForm((f) => ({ ...f, embedModel: e.target.value }))}
-              className="flex-1 rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600"
-            >
-              {EMBED_MODELS.map((m) => (
-                <option key={m.value} value={m.value}>{m.label}</option>
-              ))}
-            </select>
-            {selectedEmbed && (
-              <span className={`text-[11px] font-medium px-2 py-1 rounded whitespace-nowrap ${
-                selectedEmbed.badge === 'Cloud'
-                  ? 'bg-brand-50 text-brand-600'
-                  : 'bg-surface-tertiary text-text-secondary'
-              }`}>
-                {selectedEmbed.badge}
-              </span>
-            )}
-          </div>
+          <select
+            value={form.embedModel}
+            onChange={(e) => setForm((f) => ({ ...f, embedModel: e.target.value }))}
+            className="w-full rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+          >
+            {EMBED_MODELS.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
         </div>
       </div>
 

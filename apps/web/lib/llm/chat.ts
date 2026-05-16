@@ -31,8 +31,7 @@ export async function streamChat(
   }
 
   if (intent === 'WORKFLOW_REQUEST') {
-    // Workflow path handled in TASK-12 — return placeholder stream for now
-    const placeholder = 'Your workflow request has been received. This feature is coming soon.'
+    const placeholder = 'Your workflow request has been received and is pending admin approval.'
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(new TextEncoder().encode(placeholder))
@@ -43,39 +42,20 @@ export async function streamChat(
   }
 
   const systemPrompt = buildSystemPrompt(dept, context)
-  const { type, client } = getLLMClient(dept)
+  const { client } = getLLMClient(dept)
   const messages = [...history, { role: 'user' as const, content: userMessage }]
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        if (type === 'anthropic') {
-          const anthropic = client as import('@anthropic-ai/sdk').default
-          const s = anthropic.messages.stream({
-            model: dept.llmModel,
-            max_tokens: 2048,
-            system: systemPrompt,
-            messages,
-          })
-          for await (const chunk of s) {
-            if (
-              chunk.type === 'content_block_delta' &&
-              chunk.delta.type === 'text_delta'
-            ) {
-              controller.enqueue(new TextEncoder().encode(chunk.delta.text))
-            }
-          }
-        } else {
-          const ollama = client as import('openai').default
-          const s = await ollama.chat.completions.create({
-            model: dept.llmModel,
-            stream: true,
-            messages: [{ role: 'system', content: systemPrompt }, ...messages],
-          })
-          for await (const chunk of s) {
-            const text = chunk.choices[0]?.delta?.content ?? ''
-            if (text) controller.enqueue(new TextEncoder().encode(text))
-          }
+        const s = await client.chat.completions.create({
+          model: dept.llmModel,
+          stream: true,
+          messages: [{ role: 'system', content: systemPrompt }, ...messages],
+        })
+        for await (const chunk of s) {
+          const text = chunk.choices[0]?.delta?.content ?? ''
+          if (text) controller.enqueue(new TextEncoder().encode(text))
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'LLM error'

@@ -15,26 +15,15 @@ Message: "${message}"
 Respond with only the classification label.`
 
 export async function detectIntent(message: string, dept: Department): Promise<Intent> {
-  const { type, client } = getLLMClient(dept)
+  const { client } = getLLMClient(dept)
 
-  let label: string
+  const res = await client.chat.completions.create({
+    model: dept.llmModel,
+    max_tokens: 10,
+    messages: [{ role: 'user', content: PROMPT(message) }],
+  })
 
-  if (type === 'anthropic') {
-    const res = await (client as import('@anthropic-ai/sdk').default).messages.create({
-      model: dept.llmModel,
-      max_tokens: 10,
-      messages: [{ role: 'user', content: PROMPT(message) }],
-    })
-    label = (res.content[0] as { text: string }).text.trim().toUpperCase()
-  } else {
-    const res = await (client as import('openai').default).chat.completions.create({
-      model: dept.llmModel,
-      max_tokens: 10,
-      messages: [{ role: 'user', content: PROMPT(message) }],
-    })
-    label = (res.choices[0].message.content ?? '').trim().toUpperCase()
-  }
-
+  const label = (res.choices[0].message.content ?? '').trim().toUpperCase()
   if (VALID_INTENTS.has(label as Intent)) return label as Intent
   return 'GENERAL_CHAT'
 }

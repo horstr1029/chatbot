@@ -3,20 +3,20 @@ import type { Department } from '@prisma/client'
 const mockCreate = jest.fn()
 jest.mock('./router', () => ({
   getLLMClient: jest.fn().mockReturnValue({
-    type: 'anthropic',
+    type: 'ollama',
     client: {
-      messages: { create: mockCreate },
+      chat: { completions: { create: mockCreate } },
     },
   }),
 }))
 
 import { detectIntent } from './intent'
 
-const dept = { id: 'dept-1', llmModel: 'claude-sonnet-4-20250514' } as Department
+const dept = { id: 'dept-1', llmModel: 'mistral:7b-instruct' } as Department
 
 function mockResponse(label: string) {
   mockCreate.mockResolvedValue({
-    content: [{ text: label }],
+    choices: [{ message: { content: label } }],
   })
 }
 

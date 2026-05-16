@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 
 import { streamText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { deptMiddleware } from '@/lib/auth/middleware'
 import { getDept } from '@/lib/dept/getDept'
@@ -19,6 +18,13 @@ import { z } from 'zod'
 
 function log(level: 'info' | 'warn' | 'error', event: string, data?: object) {
   process.stdout.write(JSON.stringify({ ts: new Date().toISOString(), level, event, ...data }) + '\n')
+}
+
+function ollamaProvider() {
+  return createOpenAI({
+    baseURL: (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434') + '/v1',
+    apiKey: 'ollama',
+  })
 }
 
 const bodySchema = z.object({
@@ -55,7 +61,7 @@ export async function POST(req: Request) {
   if (intent === 'WORKFLOW_REQUEST') {
     const replyText = await handleWorkflowRequest(userMessage, dept.id, ctx.user_id, dept)
     const result = await streamText({
-      model: createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })('claude-haiku-4-5-20251001'),
+      model: ollamaProvider()(dept.llmModel),
       messages: [{ role: 'user', content: replyText }],
       system: 'Repeat the message exactly as given, word for word.',
     })
@@ -70,14 +76,7 @@ export async function POST(req: Request) {
   }
 
   const systemPrompt = buildSystemPrompt(dept, context)
-  const anthropicProvider = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })
-  const ollamaProvider = createOpenAI({
-    baseURL: (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434') + '/v1',
-    apiKey: 'ollama',
-  })
-  const model = dept.llmModel.startsWith('claude-')
-    ? anthropicProvider(dept.llmModel)
-    : ollamaProvider(dept.llmModel)
+  const model = ollamaProvider()(dept.llmModel)
 
   try {
     const result = await streamText({ model, system: systemPrompt, messages })
@@ -87,17 +86,13 @@ export async function POST(req: Request) {
         'x-intent': intent,
       },
     })
-  } catch (err) {
-    const isOllama = !dept.llmModel.startsWith('claude-')
-    if (isOllama) {
-      const fallback = await streamText({
-        model: createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })('claude-haiku-4-5-20251001'),
-        messages: [{ role: 'user', content: 'repeat exactly: Local AI model unavailable. Please contact your admin.' }],
-        system: 'Repeat the message exactly as given, word for word.',
-      })
-      return fallback.toDataStreamResponse({ headers: { 'x-citations': '[]', 'x-intent': intent } })
-    }
-    throw err
+  } catch {
+    const errorResult = await streamText({
+      model: ollamaProvider()('mistral:7b-instruct'),
+      messages: [{ role: 'user', content: 'repeat exactly: AI model unavailable. Please contact your admin.' }],
+      system: 'Repeat the message exactly as given, word for word.',
+    })
+    return errorResult.toDataStreamResponse({ headers: { 'x-citations': '[]', 'x-intent': intent } })
   }
 }
 
@@ -118,7 +113,6 @@ async function handleWorkflowRequest(
       connections: workflow.connections ?? {},
     })
 
-    // n8n Wait node resume URL follows a predictable pattern
     const n8nResumeUrl = await n8nClient.getExecutionResumeUrl(n8nWorkflow.id)
 
     const wfRecord = await prisma.workflowRequest.create({
