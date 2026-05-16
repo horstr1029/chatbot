@@ -9,10 +9,10 @@ export default async function AdminDashboardPage() {
   if (!deptId) redirect('/chat')
 
   const [userCount, docCount, pendingCount, totalWorkflows] = await Promise.all([
-    prisma.user.count({ where: { deptId: deptId, deletedAt: null } }),
-    prisma.documentSource.count({ where: { deptId: deptId, deletedAt: null } }),
-    prisma.workflowRequest.count({ where: { deptId: deptId, status: 'PENDING' } }),
-    prisma.workflowRequest.count({ where: { deptId: deptId } }),
+    prisma.userDepartment.count({ where: { deptId } }),
+    prisma.documentSource.count({ where: { deptId, deletedAt: null } }),
+    prisma.workflowRequest.count({ where: { deptId, status: 'PENDING' } }),
+    prisma.workflowRequest.count({ where: { deptId } }),
   ])
 
   const stats = [
