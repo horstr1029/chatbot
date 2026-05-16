@@ -16,7 +16,7 @@ export const GET = withErrorHandler(async () => {
 
   const departments = await prisma.department.findMany({
     orderBy: { name: 'asc' },
-    include: { _count: { select: { users: true, documentSources: true } } },
+    include: { _count: { select: { members: true, documentSources: true } } },
   })
 
   return apiResponse.success(departments)
