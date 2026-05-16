@@ -1,3 +1,4 @@
+import os
 import uuid
 from datetime import datetime, timezone
 
@@ -14,7 +15,10 @@ from qdrant_client.models import (
 from config import settings
 
 COLLECTION = "company_docs"
-VECTOR_SIZE = 1536  # text-embedding-3-small; nomic-embed-text uses 768
+
+# Vector size depends on the embed model
+_EMBED_MODEL = os.environ.get("EMBED_MODEL", settings.embed_model)
+VECTOR_SIZE = 768 if "nomic" in _EMBED_MODEL or "ollama" in settings.embed_provider else 1536
 
 
 def _client() -> QdrantClient:
@@ -26,12 +30,21 @@ def _client() -> QdrantClient:
 
 def ensure_collection(vector_size: int = VECTOR_SIZE) -> None:
     client = _client()
-    existing = [c.name for c in client.get_collections().collections]
-    if COLLECTION not in existing:
-        client.create_collection(
-            collection_name=COLLECTION,
-            vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
-        )
+    existing = {c.name: c for c in client.get_collections().collections}
+
+    if COLLECTION in existing:
+        # Check if vector size matches; recreate if not
+        info = client.get_collection(COLLECTION)
+        current_size = info.config.params.vectors.size  # type: ignore[union-attr]
+        if current_size != vector_size:
+            client.delete_collection(COLLECTION)
+        else:
+            return
+
+    client.create_collection(
+        collection_name=COLLECTION,
+        vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+    )
 
 
 def upsert_chunks(
