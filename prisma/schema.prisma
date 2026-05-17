@@ -14,6 +14,7 @@ model Department {
   systemPrompt String?  @db.Text
   llmModel     String   @default("mistral:7b-instruct")
   embedModel   String   @default("nomic-embed-text")
+  widgetToken  String?  @unique
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

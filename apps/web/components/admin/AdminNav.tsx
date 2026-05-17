@@ -20,6 +20,7 @@ export function AdminNav({ deptName, role, pendingCount }: AdminNavProps) {
     { href: '/admin/documents', label: 'Documents' },
     { href: '/admin/users', label: 'Users' },
     { href: '/admin/announcements', label: 'Announcements' },
+    { href: '/admin/quality', label: 'Quality' },
     { href: '/admin/settings', label: 'Settings' },
   ]
 

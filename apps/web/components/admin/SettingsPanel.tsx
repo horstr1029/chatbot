@@ -9,6 +9,7 @@ interface DeptConfig {
   systemPrompt: string | null
   llmModel: string
   embedModel: string
+  widgetToken: string | null
 }
 
 interface SettingsPanelProps {
@@ -26,6 +27,45 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
   const router = useRouter()
   const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([])
   const [ollamaAvailable, setOllamaAvailable] = useState<boolean | null>(null)
+  const [widgetToken, setWidgetToken] = useState<string | null>(dept.widgetToken)
+  const [tokenLoading, setTokenLoading] = useState(false)
+  const [tokenCopied, setTokenCopied] = useState(false)
+  const [digestSending, setDigestSending] = useState(false)
+  const [digestSent, setDigestSent] = useState(false)
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const embedSnippet = widgetToken
+    ? `<iframe\n  src="${appUrl}/embed/${widgetToken}"\n  width="380"\n  height="600"\n  style="border:none;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.12);"\n></iframe>`
+    : ''
+
+  async function generateToken() {
+    setTokenLoading(true)
+    const res = await fetch('/api/admin/embed-token', { method: 'POST' })
+    const { data } = await res.json()
+    setWidgetToken(data.token)
+    setTokenLoading(false)
+  }
+
+  async function revokeToken() {
+    setTokenLoading(true)
+    await fetch('/api/admin/embed-token', { method: 'DELETE' })
+    setWidgetToken(null)
+    setTokenLoading(false)
+  }
+
+  async function copySnippet() {
+    await navigator.clipboard.writeText(embedSnippet)
+    setTokenCopied(true)
+    setTimeout(() => setTokenCopied(false), 2000)
+  }
+
+  async function sendDigestNow() {
+    setDigestSending(true)
+    await fetch('/api/admin/digest', { method: 'POST' })
+    setDigestSending(false)
+    setDigestSent(true)
+    setTimeout(() => setDigestSent(false), 3000)
+  }
 
   useEffect(() => {
     fetch('/api/ollama/models')
@@ -136,6 +176,75 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
         {saved && (
           <span className="text-[13px] text-green-600 font-medium">Saved</span>
         )}
+      </div>
+
+      {/* Embeddable widget */}
+      <div className="bg-white border border-border rounded-lg p-5 space-y-3">
+        <div>
+          <p className="text-[13px] font-semibold text-text-primary">Embeddable widget</p>
+          <p className="text-[12px] text-text-muted mt-0.5">
+            Drop the snippet below into your intranet to embed this chatbot.
+          </p>
+        </div>
+        {widgetToken ? (
+          <>
+            <pre className="bg-surface-tertiary rounded-md p-3 text-[11px] text-text-secondary overflow-x-auto whitespace-pre-wrap break-all font-mono">
+              {embedSnippet}
+            </pre>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={copySnippet}
+                className="px-3 py-1.5 rounded-md border border-border text-[12px] font-medium text-text-secondary hover:bg-surface-tertiary transition-colors"
+              >
+                {tokenCopied ? 'Copied!' : 'Copy snippet'}
+              </button>
+              <button
+                onClick={generateToken}
+                disabled={tokenLoading}
+                className="px-3 py-1.5 rounded-md border border-border text-[12px] font-medium text-text-secondary hover:bg-surface-tertiary transition-colors disabled:opacity-50"
+              >
+                Regenerate token
+              </button>
+              <button
+                onClick={revokeToken}
+                disabled={tokenLoading}
+                className="px-3 py-1.5 rounded-md text-[12px] font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+              >
+                Revoke
+              </button>
+            </div>
+          </>
+        ) : (
+          <button
+            onClick={generateToken}
+            disabled={tokenLoading}
+            className="px-4 py-2 rounded-md bg-gray-900 text-white text-[13px] font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
+          >
+            {tokenLoading ? 'Generating…' : 'Generate embed token'}
+          </button>
+        )}
+      </div>
+
+      {/* Weekly digest */}
+      <div className="bg-white border border-border rounded-lg p-5 space-y-3">
+        <div>
+          <p className="text-[13px] font-semibold text-text-primary">Weekly email digest</p>
+          <p className="text-[12px] text-text-muted mt-0.5">
+            A summary of conversations and feedback is sent to dept admins every Monday at 8am.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={sendDigestNow}
+            disabled={digestSending}
+            className="px-4 py-2 rounded-md border border-border text-[13px] font-medium text-text-secondary hover:bg-surface-tertiary transition-colors disabled:opacity-50"
+          >
+            {digestSending ? 'Queueing…' : 'Send digest now'}
+          </button>
+          {digestSent && (
+            <span className="text-[13px] text-green-600 font-medium">Queued — check your inbox shortly.</span>
+          )}
+        </div>
       </div>
     </div>
   )

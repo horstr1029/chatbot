@@ -48,9 +48,9 @@ Larger features requiring additional infrastructure or external integrations.
 
 | # | Feature | Status |
 |---|---------|--------|
-| 4.1 | **Weekly email digest** — popular Q&A summary sent to dept admins | 🔲 Planned |
-| 4.2 | **Embeddable widget** — drop-in chat snippet for the company intranet | 🔲 Planned |
-| 4.3 | **Answer quality dashboard** — admin view of thumbs ratings + low-scoring queries | 🔲 Planned |
+| 4.1 | **Weekly email digest** — popular Q&A summary sent to dept admins | ✅ Done |
+| 4.2 | **Embeddable widget** — drop-in chat snippet for the company intranet | ✅ Done |
+| 4.3 | **Answer quality dashboard** — admin view of thumbs ratings + low-scoring queries | ✅ Done |
 
 ---
 
