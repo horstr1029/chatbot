@@ -69,7 +69,7 @@ export async function POST(req: Request) {
   }
 
   // ── RAG / general path ─────────────────────────────────────────
-  let context = { contextBlock: '', citations: [] as { id: string; name: string; url: string }[] }
+  let context = { contextBlock: '', citations: [] as { id: string; name: string; url: string; text: string }[] }
   if (intent === 'DOC_QUESTION') {
     const chunks = await retrieve(userMessage, dept)
     context = buildContext(chunks)
