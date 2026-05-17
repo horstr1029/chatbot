@@ -6,6 +6,7 @@ import type { ChatSession } from '@prisma/client'
 import { Sidebar } from './Sidebar'
 import { MessageBubble, TypingIndicator } from './MessageBubble'
 import { Composer } from './Composer'
+import { DocsPanel } from './DocsPanel'
 import type { Citation } from './CitationChip'
 
 interface DeptOption { id: string; name: string }
@@ -34,6 +35,7 @@ export function ChatInterface({
   const [sessions, setSessions] = useState(initialSessions)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [citationsMap, setCitationsMap] = useState<Record<string, Citation[]>>({})
+  const [docsOpen, setDocsOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pendingCitations = useRef<Citation[]>([])
   const sessionIdRef = useRef<string | null>(null)
@@ -141,9 +143,12 @@ export function ChatInterface({
           <h1 className="flex-1 text-[14px] font-semibold text-text-primary truncate">
             {messages.length > 0 ? title : 'New conversation'}
           </h1>
-          <span className="text-[11px] font-medium px-2 py-1 rounded bg-surface-tertiary text-text-muted">
+          <button
+            onClick={() => setDocsOpen(true)}
+            className="text-[11px] font-medium px-2 py-1 rounded bg-surface-tertiary text-text-muted hover:bg-brand-50 hover:text-brand-600 transition-colors"
+          >
             {deptName} docs
-          </span>
+          </button>
         </div>
 
         {/* Messages */}
@@ -187,6 +192,13 @@ export function ChatInterface({
           deptName={deptName}
         />
       </div>
+
+      <DocsPanel
+        open={docsOpen}
+        onClose={() => setDocsOpen(false)}
+        deptId={deptId}
+        deptName={deptName}
+      />
     </div>
   )
 }
