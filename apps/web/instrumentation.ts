@@ -4,9 +4,11 @@ export async function register() {
     const { startReminderWorker } = await import('@/lib/queue/reminder.queue')
     const { startDigestWorker } = await import('@/lib/queue/digest.queue')
     const { startExpiryWorker } = await import('@/lib/queue/expiry.queue')
+    const { startReminderUserWorker } = await import('@/lib/queue/reminder-user.queue')
     startIngestionWorker()
     startReminderWorker()
     startDigestWorker()
     startExpiryWorker()
+    startReminderUserWorker()
   }
 }

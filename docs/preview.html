@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Company Chatbot — Product Overview</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ── */
+    .page { max-width: 960px; margin: 0 auto; padding: 0 32px 80px; }
+
+    /* ── Hero ── */
+    .hero {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 72px 0 64px;
+      text-align: center;
+    }
+    .hero-inner { max-width: 960px; margin: 0 auto; padding: 0 32px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #eff6ff; border: 1px solid #bfdbfe;
+      color: #2563eb; font-size: 12px; font-weight: 600;
+      padding: 4px 12px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: .05em;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 42px; font-weight: 700; line-height: 1.15;
+      color: #111827; margin-bottom: 16px;
+      letter-spacing: -.5px;
+    }
+    .hero h1 span { color: #2563eb; }
+    .hero p {
+      font-size: 17px; color: #4b5563; max-width: 580px;
+      margin: 0 auto 36px; line-height: 1.7;
+    }
+    .hero-stats {
+      display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-num { font-size: 28px; font-weight: 700; color: #111827; }
+    .stat-label { font-size: 12px; color: #9ca3af; font-weight: 500; margin-top: 2px; }
+
+    /* ── Section ── */
+    section { padding-top: 56px; }
+    .section-label {
+      font-size: 11px; font-weight: 600; color: #2563eb;
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
+    }
+    .section-title { font-size: 26px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+    .section-sub { font-size: 14px; color: #6b7280; margin-bottom: 32px; }
+
+    /* ── Pillars ── */
+    .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .pillar {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 28px 24px;
+    }
+    .pillar-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; flex-shrink: 0;
+    }
+    .pillar h3 { font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 8px; }
+    .pillar p { font-size: 13px; color: #6b7280; line-height: 1.65; }
+
+    /* ── Feature grid ── */
+    .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .feature-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+      padding: 20px; display: flex; gap: 14px; align-items: flex-start;
+    }
+    .feature-icon {
+      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .feature-card h4 { font-size: 13.5px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+    .feature-card p { font-size: 12.5px; color: #6b7280; line-height: 1.6; }
+
+    /* ── How it works ── */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; position: relative; }
+    .steps::before {
+      content: ''; position: absolute; top: 22px; left: calc(100% / 6);
+      width: calc(100% * 2 / 3); height: 1px; background: #e5e7eb; z-index: 0;
+    }
+    .step { text-align: center; padding: 0 20px; position: relative; z-index: 1; }
+    .step-num {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #2563eb; color: #fff;
+      font-size: 16px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .step h4 { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 6px; }
+    .step p { font-size: 12.5px; color: #6b7280; line-height: 1.6; }
+
+    /* ── Two-col ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    /* ── Process cards ── */
+    .process-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 22px;
+    }
+    .process-card .tag {
+      display: inline-block; font-size: 10px; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px; margin-bottom: 12px;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .process-card h4 { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 6px; }
+    .process-card p { font-size: 12.5px; color: #6b7280; line-height: 1.6; }
+
+    /* ── Tech strip ── */
+    .tech-strip {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 24px 28px; display: flex; flex-wrap: wrap;
+      align-items: center; gap: 8px; margin-top: 56px;
+    }
+    .tech-strip-label { font-size: 12px; font-weight: 600; color: #9ca3af; margin-right: 8px; text-transform: uppercase; letter-spacing: .05em; }
+    .tech-pill {
+      background: #f3f4f6; border: 1px solid #e5e7eb;
+      color: #4b5563; font-size: 12px; font-weight: 500;
+      padding: 4px 10px; border-radius: 6px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center; padding: 40px 32px 0;
+      font-size: 12px; color: #9ca3af;
+    }
+
+    /* ── Colours ── */
+    .blue   { background: #eff6ff; color: #2563eb; }
+    .green  { background: #f0fdf4; color: #16a34a; }
+    .amber  { background: #fffbeb; color: #d97706; }
+    .purple { background: #f5f3ff; color: #7c3aed; }
+    .rose   { background: #fff1f2; color: #e11d48; }
+    .teal   { background: #f0fdfa; color: #0d9488; }
+    .indigo { background: #eef2ff; color: #4f46e5; }
+    .orange { background: #fff7ed; color: #ea580c; }
+    .slate  { background: #f8fafc; color: #475569; }
+
+    svg { display: block; }
+
+    @media (max-width: 700px) {
+      .pillars, .feature-grid, .two-col, .steps { grid-template-columns: 1fr; }
+      .steps::before { display: none; }
+      .hero h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HERO ═══════════════════════ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5"/></svg>
+      Internal AI Platform
+    </div>
+    <h1>Your company knowledge,<br /><span>instantly searchable</span></h1>
+    <p>A private AI assistant that answers questions from your own documents, automates repetitive tasks, and routes approvals — scoped to each department.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">6</div><div class="stat-label">Feature phases shipped</div></div>
+      <div class="stat"><div class="stat-num">∞</div><div class="stat-label">Departments supported</div></div>
+      <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Private — runs on your server</div></div>
+      <div class="stat"><div class="stat-num">0</div><div class="stat-label">Data sent to third parties</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+<!-- ═══════════════════════ PILLARS ═══════════════════════ -->
+<section>
+  <div class="section-label">Core capabilities</div>
+  <div class="section-title">Everything your team needs in one place</div>
+  <div class="section-sub">Three pillars that cover the full employee workflow — from finding information to taking action.</div>
+  <div class="pillars">
+
+    <div class="pillar">
+      <div class="pillar-icon blue">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#2563eb" stroke-width="1.7">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <h3>Document intelligence</h3>
+      <p>Ask any question in plain language. The AI searches your department's documents, returns a cited answer, and shows exactly which source it used.</p>
+    </div>
+
+    <div class="pillar">
+      <div class="pillar-icon amber">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="1.7">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <h3>Workflow automation</h3>
+      <p>Employees describe a task in chat and the AI designs and submits an n8n automation for admin approval. No coding, no tickets — just plain English.</p>
+    </div>
+
+    <div class="pillar">
+      <div class="pillar-icon green">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="1.7">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+      </div>
+      <h3>Business process tools</h3>
+      <p>Smart form filling, meeting prep briefs, expiry alerts, and recurring reminders — structured tools that save real time across every department.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════ HOW IT WORKS ═══════════════════════ -->
+<section>
+  <div class="section-label">How it works</div>
+  <div class="section-title">Three steps to an answer</div>
+  <div class="section-sub">The retrieval pipeline runs entirely on your own server — no data leaves your network.</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h4>Ask a question</h4>
+      <p>Employee types a question in the chat interface. The AI detects whether it's a document query, a form request, or a workflow automation.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h4>Retrieve &amp; reason</h4>
+      <p>Relevant document chunks are pulled from the vector database and sent to the local Ollama model along with a department-scoped system prompt.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h4>Answer with citations</h4>
+      <p>A streamed response appears with clickable source chips, a confidence indicator, and follow-up question suggestions.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ CHAT FEATURES ═══════════════════════ -->
+<section>
+  <div class="section-label">Chat experience</div>
+  <div class="section-title">Built for employees, not just power users</div>
+  <div class="section-sub">Every feature is designed to be discoverable and require no training.</div>
+  <div class="feature-grid">
+
+    <div class="feature-card">
+      <div class="feature-icon blue"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#2563eb" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+      <div><h4>Cited answers</h4><p>Every response shows which document it came from. Click a chip to read the exact paragraph.</p></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon green"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div><h4>Answer confidence</h4><p>A green / yellow / red dot shows how closely the source documents matched the question.</p></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon purple"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7c3aed" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg></div>
+      <div><h4>Follow-up suggestions</h4><p>The AI suggests 3 related questions after each response — one click sends them.</p></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon amber"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg></div>
+      <div><h4>Save &amp; export</h4><p>Bookmark any AI response for later. Export a full conversation as a Markdown file.</p></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon teal"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#0d9488" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+      <div><h4>Meeting prep brief</h4><p>Enter a meeting title and agenda — the AI streams a structured briefing from your documents.</p></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon rose"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#e11d48" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+      <div><h4>Smart form filler</h4><p>Describe a task in chat — the AI finds the right form template and fills in the fields automatically.</p></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon indigo"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#4f46e5" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+      <div><h4>Workflow requests</h4><p>Request any automation in plain English. The AI builds it in n8n and submits it to your admin for a one-click approval.</p></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon orange"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#ea580c" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
+      <div><h4>Push notifications</h4><p>Get an instant browser alert when a workflow is approved or rejected, even with the tab closed.</p></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════ ADMIN ═══════════════════════ -->
+<section>
+  <div class="section-label">Administration</div>
+  <div class="section-title">Full control for department admins</div>
+  <div class="section-sub">Each department manages its own documents, users, settings, and workflows — without needing IT.</div>
+  <div class="two-col">
+
+    <div class="process-card">
+      <div class="tag blue">Documents</div>
+      <h4>Connect any source</h4>
+      <p>Link Google Drive folders, SharePoint libraries, or local paths. Upload PDFs directly. Large documents are automatically split into sections. Set expiry dates — admins get a weekly alert when policies are about to lapse.</p>
+    </div>
+
+    <div class="process-card">
+      <div class="tag green">Workflows</div>
+      <h4>One-click approvals</h4>
+      <p>Pending workflow requests appear in the admin panel. Approve or reject with a reason — the employee gets a push notification and the n8n workflow executes automatically.</p>
+    </div>
+
+    <div class="process-card">
+      <div class="tag amber">Quality</div>
+      <h4>Answer quality dashboard</h4>
+      <p>See thumbs-up / thumbs-down ratings per query over 30 days, with a list of low-scoring questions so you know exactly which documents need improving.</p>
+    </div>
+
+    <div class="process-card">
+      <div class="tag purple">Settings</div>
+      <h4>Per-department AI config</h4>
+      <p>Choose the Ollama model and embedding model, customise the system prompt, connect a Slack webhook for notifications, and generate an embeddable widget for your intranet.</p>
+    </div>
+
+    <div class="process-card">
+      <div class="tag teal">Users</div>
+      <h4>Self-service user management</h4>
+      <p>Invite users by email with a temporary password. Assign roles (Member or Admin). Users can belong to multiple departments and search across all of them simultaneously.</p>
+    </div>
+
+    <div class="process-card">
+      <div class="tag rose">Forms</div>
+      <h4>Custom form templates</h4>
+      <p>Build form templates (leave requests, purchase orders, expense claims) with any field types. Employees fill them via natural language — the AI does the data entry.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════ SUPER ADMIN ═══════════════════════ -->
+<section>
+  <div class="section-label">Super admin</div>
+  <div class="section-title">Org-wide visibility in one dashboard</div>
+  <div class="section-sub">A single super-admin view spans all departments.</div>
+  <div class="feature-grid">
+
+    <div class="feature-card">
+      <div class="feature-icon blue"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#2563eb" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
+      <div><h4>Usage analytics</h4><p>Sessions per day, by department, peak hours, most active users, and top questions — all in one view.</p></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon amber"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
+      <div><h4>Department management</h4><p>Create, configure, and remove departments. Switch into any department's admin panel to manage it directly.</p></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon green"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+      <div><h4>Global SMTP settings</h4><p>Configure the email server once — all digest and expiry alert emails use it across every department.</p></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon purple"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7c3aed" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+      <div><h4>Weekly email digest</h4><p>Dept admins receive an automated Monday morning summary of conversations, ratings, and top questions.</p></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════ TECH ═══════════════════════ -->
+<div class="tech-strip">
+  <span class="tech-strip-label">Built with</span>
+  <span class="tech-pill">Next.js 14</span>
+  <span class="tech-pill">TypeScript</span>
+  <span class="tech-pill">Ollama (local LLM)</span>
+  <span class="tech-pill">Qdrant vector DB</span>
+  <span class="tech-pill">PostgreSQL</span>
+  <span class="tech-pill">Redis + BullMQ</span>
+  <span class="tech-pill">n8n automation</span>
+  <span class="tech-pill">Unstructured.io</span>
+  <span class="tech-pill">Docker</span>
+  <span class="tech-pill">PWA / push notifications</span>
+  <span class="tech-pill">Slack webhooks</span>
+</div>
+
+</div><!-- /page -->
+
+<div class="footer">
+  <p>Company Chatbot — Private AI assistant &nbsp;·&nbsp; Runs on your own server &nbsp;·&nbsp; No data leaves your network</p>
+  <p style="margin-top:6px;">Prepared for internal review · 2026</p>
+</div>
+
+</body>
+</html>

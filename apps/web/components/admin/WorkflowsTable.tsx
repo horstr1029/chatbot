@@ -4,6 +4,18 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { StatusPill } from './StatusPill'
 
+type ApprovalStepStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+type ApprovalStep = {
+  id: string
+  stepOrder: number
+  label: string
+  status: ApprovalStepStatus
+  approvedBy: { name: string | null; email: string } | null
+  approvedAt: Date | null
+  rejectionReason: string | null
+}
+
 type WorkflowRequest = {
   id: string
   description: string
@@ -13,10 +25,69 @@ type WorkflowRequest = {
   createdAt: Date
   requestedBy: { name: string | null; email: string }
   approvedBy: { name: string | null; email: string } | null
+  approvalSteps: ApprovalStep[]
 }
 
 interface WorkflowsTableProps {
   requests: WorkflowRequest[]
+}
+
+function StepChain({ steps }: { steps: ApprovalStep[] }) {
+  if (steps.length === 0) return null
+
+  return (
+    <div className="mt-3">
+      <p className="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-2">
+        Approval chain
+      </p>
+      <div className="flex items-center gap-0 flex-wrap">
+        {steps.map((step, idx) => {
+          const isApproved = step.status === 'APPROVED'
+          const isRejected = step.status === 'REJECTED'
+          const isPending = step.status === 'PENDING'
+
+          const circleClass = isApproved
+            ? 'bg-green-500 text-white border-green-500'
+            : isRejected
+              ? 'bg-red-500 text-white border-red-500'
+              : 'bg-white text-text-muted border-border'
+
+          return (
+            <div key={step.id} className="flex items-center">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[11px] font-semibold ${circleClass}`}
+                >
+                  {isApproved ? (
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : isRejected ? (
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    step.stepOrder
+                  )}
+                </div>
+                <p className={`text-[10px] mt-1 whitespace-nowrap ${isPending ? 'text-text-muted' : isApproved ? 'text-green-600' : 'text-red-600'}`}>
+                  {step.label}
+                </p>
+                {step.approvedBy && (
+                  <p className="text-[10px] text-text-muted truncate max-w-[80px]">
+                    {step.approvedBy.name ?? step.approvedBy.email}
+                  </p>
+                )}
+              </div>
+              {idx < steps.length - 1 && (
+                <div className="w-8 h-px bg-border mx-1 mb-4 flex-shrink-0" />
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 export function WorkflowsTable({ requests }: WorkflowsTableProps) {
@@ -89,7 +160,14 @@ export function WorkflowsTable({ requests }: WorkflowsTableProps) {
                   })}
                 </td>
                 <td className="px-4 py-3">
-                  <StatusPill status={r.status} />
+                  <div className="flex items-center gap-2">
+                    <StatusPill status={r.status} />
+                    {r.approvalSteps.length > 0 && (
+                      <span className="text-[10px] text-text-muted">
+                        {r.approvalSteps.filter((s) => s.status === 'APPROVED').length}/{r.approvalSteps.length} steps
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-right">
                   <svg
@@ -117,6 +195,8 @@ export function WorkflowsTable({ requests }: WorkflowsTableProps) {
                         </p>
                         <p className="text-[13px] text-text-secondary">{r.description}</p>
                       </div>
+
+                      <StepChain steps={r.approvalSteps} />
 
                       {r.rejectionReason && (
                         <div>

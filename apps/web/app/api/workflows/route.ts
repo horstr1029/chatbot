@@ -14,6 +14,18 @@ export const GET = withErrorHandler(async () => {
     include: {
       requestedBy: { select: { name: true, email: true } },
       approvedBy: { select: { name: true, email: true } },
+      approvalSteps: {
+        orderBy: { stepOrder: 'asc' },
+        select: {
+          id: true,
+          stepOrder: true,
+          label: true,
+          status: true,
+          approvedAt: true,
+          rejectionReason: true,
+          approvedBy: { select: { name: true, email: true } },
+        },
+      },
     },
   })
 

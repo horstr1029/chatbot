@@ -8,15 +8,17 @@ interface AdminNavProps {
   deptName: string
   role: string
   pendingCount: number
+  incomingRequestsCount: number
 }
 
-export function AdminNav({ deptName, role, pendingCount }: AdminNavProps) {
+export function AdminNav({ deptName, role, pendingCount, incomingRequestsCount }: AdminNavProps) {
   const pathname = usePathname()
   const router = useRouter()
 
   const links = [
     { href: '/admin', label: 'Dashboard' },
     { href: '/admin/workflows', label: 'Workflows', badge: pendingCount > 0 ? pendingCount : null },
+    { href: '/admin/cross-dept', label: 'Requests', badge: incomingRequestsCount > 0 ? incomingRequestsCount : null },
     { href: '/admin/documents', label: 'Documents' },
     { href: '/admin/form-templates', label: 'Forms' },
     { href: '/admin/users', label: 'Users' },

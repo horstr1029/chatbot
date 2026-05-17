@@ -75,9 +75,9 @@ Structured tooling to reduce manual, repetitive work across departments.
 
 | # | Feature | Status |
 |---|---------|--------|
-| 6.1 | **Document expiry alerts** — weekly job emails dept admins when policies/contracts expire within 30 days | 🔲 Planned |
-| 6.2 | **Smart form filler** — describe a task in chat, AI pre-fills the department form template and submits it | 🔲 Planned |
-| 6.3 | **Meeting prep brief** — auto-pull relevant docs, past decisions, and action items before a scheduled meeting | 🔲 Planned |
+| 6.1 | **Document expiry alerts** — weekly job emails dept admins when policies/contracts expire within 30 days | ✅ Done |
+| 6.2 | **Smart form filler** — describe a task in chat, AI pre-fills the department form template and submits it | ✅ Done |
+| 6.3 | **Meeting prep brief** — auto-pull relevant docs, past decisions, and action items before a scheduled meeting | ✅ Done |
 
 ---
 
@@ -87,9 +87,9 @@ Deeper automation features requiring more infrastructure.
 
 | # | Feature | Status |
 |---|---------|--------|
-| 7.1 | **Multi-step approval chains** — sequential approvals (Manager → Finance → Director) before workflow execution | 🔲 Planned |
-| 7.2 | **Recurring task reminders** — user sets a schedule; AI sends a contextual briefing from the knowledge base | 🔲 Planned |
-| 7.3 | **Cross-department request routing** — request raised in one dept, actioned by another, with handoff tracking | 🔲 Planned |
+| 7.1 | **Multi-step approval chains** — sequential approvals (Manager → Finance → Director) before workflow execution | ✅ Done |
+| 7.2 | **Recurring task reminders** — user sets a schedule; AI sends a contextual briefing from the knowledge base | ✅ Done |
+| 7.3 | **Cross-department request routing** — request raised in one dept, actioned by another, with handoff tracking | ✅ Done |
 
 ---
 

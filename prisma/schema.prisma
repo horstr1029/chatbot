@@ -16,14 +16,19 @@ model Department {
   embedModel      String   @default("nomic-embed-text")
   widgetToken     String?  @unique
   slackWebhookUrl String?
+  approvalChain   Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  members          UserDepartment[]
-  documentSources  DocumentSource[]
-  workflowRequests WorkflowRequest[]
-  announcements    Announcement[]
-  formTemplates    FormTemplate[]
+  members                  UserDepartment[]
+  documentSources          DocumentSource[]
+  workflowRequests         WorkflowRequest[]
+  announcements            Announcement[]
+  formTemplates            FormTemplate[]
+  reminders                Reminder[]
+  crossDeptRequestsFrom    CrossDeptRequest[] @relation("crossFrom")
+  crossDeptRequestsTo      CrossDeptRequest[] @relation("crossTo")
+  workflowApprovalSteps    WorkflowApprovalStep[] @relation("stepApprovingDept")
 }
 
 model User {
@@ -36,10 +41,13 @@ model User {
   createdAt          DateTime @default(now())
   deletedAt          DateTime?
 
-  departments       UserDepartment[]
-  workflowRequests  WorkflowRequest[] @relation("requestedBy")
-  workflowApprovals WorkflowRequest[] @relation("approvedBy")
-  chatSessions      ChatSession[]
+  departments           UserDepartment[]
+  workflowRequests      WorkflowRequest[]      @relation("requestedBy")
+  workflowApprovals     WorkflowRequest[]      @relation("approvedBy")
+  chatSessions          ChatSession[]
+  reminders             Reminder[]
+  approvalSteps         WorkflowApprovalStep[] @relation("stepApprovedBy")
+  crossDeptRequests     CrossDeptRequest[]     @relation("crossRequester")
 }
 
 model UserDepartment {
@@ -96,6 +104,8 @@ model WorkflowRequest {
   approvedAt      DateTime?
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
+
+  approvalSteps WorkflowApprovalStep[]
 }
 
 enum WorkflowRequestStatus {
@@ -175,4 +185,68 @@ model FormTemplate {
   active    Boolean    @default(true)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+}
+
+model WorkflowApprovalStep {
+  id              String             @id @default(cuid())
+  workflowId      String
+  workflow        WorkflowRequest    @relation(fields: [workflowId], references: [id])
+  stepOrder       Int
+  label           String
+  approvingDeptId String
+  approvingDept   Department         @relation("stepApprovingDept", fields: [approvingDeptId], references: [id])
+  status          ApprovalStepStatus @default(PENDING)
+  approvedById    String?
+  approvedBy      User?              @relation("stepApprovedBy", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime           @default(now())
+
+  @@unique([workflowId, stepOrder])
+}
+
+enum ApprovalStepStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Reminder {
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id])
+  deptId        String
+  dept          Department @relation(fields: [deptId], references: [id])
+  title         String
+  topic         String
+  cronExpr      String
+  scheduleLabel String
+  active        Boolean    @default(true)
+  lastSentAt    DateTime?
+  nextRunAt     DateTime
+  createdAt     DateTime   @default(now())
+}
+
+model CrossDeptRequest {
+  id            String          @id @default(cuid())
+  title         String
+  description   String          @db.Text
+  fromDeptId    String
+  fromDept      Department      @relation("crossFrom", fields: [fromDeptId], references: [id])
+  toDeptId      String
+  toDept        Department      @relation("crossTo", fields: [toDeptId], references: [id])
+  requestedById String
+  requestedBy   User            @relation("crossRequester", fields: [requestedById], references: [id])
+  status        CrossDeptStatus @default(OPEN)
+  response      String?         @db.Text
+  resolvedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+enum CrossDeptStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
 }

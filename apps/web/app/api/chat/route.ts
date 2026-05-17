@@ -16,6 +16,9 @@ import { rateLimit } from '@/lib/api/rateLimit'
 import { scheduleWorkflowReminder } from '@/lib/queue/reminder.queue'
 import { fillForm } from '@/lib/llm/formFiller'
 import type { FormField } from '@/lib/llm/formFiller'
+import { parseReminder } from '@/lib/llm/reminderParser'
+import { nextCronRun } from '@/lib/queue/reminder-user.queue'
+import { notifyUser } from '@/lib/push/webpush'
 import { z } from 'zod'
 
 function log(level: 'info' | 'warn' | 'error', event: string, data?: object) {
@@ -68,6 +71,45 @@ export async function POST(req: Request) {
       system: 'Repeat the message exactly as given, word for word.',
     })
     return result.toDataStreamResponse({ headers: { 'x-intent': intent } })
+  }
+
+  // ── Reminder request path ─────────────────────────────────────
+  if (intent === 'REMINDER_REQUEST') {
+    const parsed = await parseReminder(userMessage, dept.llmModel)
+    if (parsed) {
+      const nextRunAt = nextCronRun(parsed.cronExpr)
+      await prisma.reminder.create({
+        data: {
+          userId: ctx.user_id,
+          deptId: ctx.dept_id,
+          title: parsed.title,
+          topic: parsed.topic,
+          cronExpr: parsed.cronExpr,
+          scheduleLabel: parsed.scheduleLabel,
+          nextRunAt,
+          active: true,
+        },
+      })
+      const replyText = `Done! I've set a reminder: "${parsed.title}" — ${parsed.scheduleLabel}. You'll receive a push notification and a knowledge-base briefing each time.`
+      const result = await streamText({
+        model: ollamaProvider()(dept.llmModel),
+        messages: [{ role: 'user', content: replyText }],
+        system: 'Repeat the message exactly as given, word for word.',
+      })
+      return result.toDataStreamResponse({ headers: { 'x-intent': 'REMINDER_REQUEST' } })
+    }
+    // Fall through to general chat if parsing failed
+  }
+
+  // ── Cross-dept request path ────────────────────────────────────
+  if (intent === 'CROSS_DEPT_REQUEST') {
+    const replyText = `To send a request to another department, click the globe icon in the top bar. You can describe your request and select the target department from there.`
+    const result = await streamText({
+      model: ollamaProvider()(dept.llmModel),
+      messages: [{ role: 'user', content: replyText }],
+      system: 'Repeat the message exactly as given, word for word.',
+    })
+    return result.toDataStreamResponse({ headers: { 'x-intent': 'CROSS_DEPT_REQUEST' } })
   }
 
   // ── Form request path ──────────────────────────────────────────
@@ -189,9 +231,41 @@ async function handleWorkflowRequest(
       },
     })
 
+    // ── Multi-step approval chain ──────────────────────────────
+    const chain = dept.approvalChain as { stepOrder: number; label: string; deptId: string }[] | null
+    if (chain && chain.length > 0) {
+      await prisma.workflowApprovalStep.createMany({
+        data: chain.map((s) => ({
+          workflowId: wfRecord.id,
+          stepOrder: s.stepOrder,
+          label: s.label,
+          approvingDeptId: s.deptId,
+        })),
+      })
+
+      // Notify first step's dept admins
+      const firstStep = chain[0]
+      const firstAdmins = await prisma.userDepartment.findMany({
+        where: { deptId: firstStep.deptId, role: 'DEPT_ADMIN' },
+        select: { userId: true },
+      })
+      for (const { userId: adminId } of firstAdmins) {
+        await notifyUser(adminId, {
+          title: 'Workflow approval needed',
+          body: description.slice(0, 80),
+          url: '/admin/workflows',
+        })
+      }
+    }
+    // ── End multi-step ─────────────────────────────────────────
+
     await scheduleWorkflowReminder(wfRecord.id, deptId)
 
-    return `Your workflow request has been submitted for admin approval.\n\n**Workflow:** ${description}\n\nYou'll be notified once an admin reviews it.`
+    const chainNote = chain && chain.length > 0
+      ? ` This request requires ${chain.length} approval step${chain.length > 1 ? 's' : ''}.`
+      : ''
+
+    return `Your workflow request has been submitted for admin approval.\n\n**Workflow:** ${description}\n\nYou'll be notified once an admin reviews it.${chainNote}`
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     return `I understood your workflow request but couldn't create it automatically: ${msg}\n\nPlease contact your admin to set it up manually.`

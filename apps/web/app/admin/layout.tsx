@@ -11,17 +11,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/chat')
   }
 
-  const pendingCount = await prisma.workflowRequest.count({
-    where: { deptId: session.deptId, status: 'PENDING' },
-  })
+  const [pendingCount, incomingRequestsCount, dept] = await Promise.all([
+    prisma.workflowRequest.count({
+      where: { deptId: session.deptId, status: 'PENDING' },
+    }),
+    prisma.crossDeptRequest.count({
+      where: { toDeptId: session.deptId, status: { in: ['OPEN', 'IN_PROGRESS'] } },
+    }),
+    prisma.department.findUnique({ where: { id: session.deptId }, select: { name: true } }),
+  ])
 
-  const deptName = await prisma.department
-    .findUnique({ where: { id: session.deptId }, select: { name: true } })
-    .then((d) => d?.name ?? '')
+  const deptName = dept?.name ?? ''
 
   return (
     <div className="min-h-screen bg-surface-secondary">
-      <AdminNav deptName={deptName} role={session.role} pendingCount={pendingCount} />
+      <AdminNav
+        deptName={deptName}
+        role={session.role}
+        pendingCount={pendingCount}
+        incomingRequestsCount={incomingRequestsCount}
+      />
       <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
     </div>
   )

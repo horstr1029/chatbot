@@ -12,11 +12,21 @@ const createSchema = z.object({
 
 export const GET = withErrorHandler(async () => {
   const ctx = await deptMiddleware()
-  requireRole(ctx.role, 'SUPER_ADMIN')
+
+  // SUPER_ADMIN gets full metadata; DEPT_ADMIN gets a slim list for selectors
+  if (ctx.role === 'SUPER_ADMIN') {
+    const departments = await prisma.department.findMany({
+      orderBy: { name: 'asc' },
+      include: { _count: { select: { members: true, documentSources: true } } },
+    })
+    return apiResponse.success(departments)
+  }
+
+  requireRole(ctx.role, 'DEPT_ADMIN')
 
   const departments = await prisma.department.findMany({
     orderBy: { name: 'asc' },
-    include: { _count: { select: { members: true, documentSources: true } } },
+    select: { id: true, name: true },
   })
 
   return apiResponse.success(departments)
