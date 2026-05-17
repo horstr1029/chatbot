@@ -99,6 +99,42 @@ const FEATURES = [
     title: 'Announcements',
     desc: 'Important messages pinned by your department admin appear as a banner above the composer. Dismiss them with the × button — they won\'t reappear until a new one is posted.',
   },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    title: 'Answer confidence',
+    desc: 'A small coloured dot appears next to each AI answer — green means the source documents closely matched your question, yellow is moderate, and red means the answer may be less reliable. Hover the dot to see the score.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+      </svg>
+    ),
+    title: 'Follow-up suggestions',
+    desc: 'After each AI response the chatbot suggests up to 3 related follow-up questions as clickable chips. Click one to send it instantly — no typing required.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+    ),
+    title: 'Push notifications',
+    desc: 'Click the bell icon in the top bar to enable browser push notifications. You\'ll receive an instant alert when a workflow you requested is approved or rejected — even if the tab is closed.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>
+    ),
+    title: 'Install as app (PWA)',
+    desc: 'The chatbot can be installed as a standalone app on your phone or desktop. In Chrome, click the install icon in the address bar. On iOS Safari, tap Share → Add to Home Screen.',
+  },
 ]
 
 const FOLDER_STRUCTURE = `Google Drive / SharePoint root
@@ -142,7 +178,7 @@ const FOLDER_TIPS = [
   'Prefer PDF or Word documents over spreadsheets for better text extraction.',
   'Archive outdated documents into an "_Archive" subfolder rather than deleting — the admin can exclude them from indexing.',
   'The "Global" folder is indexed for every department, so put company-wide policies there.',
-  'Aim for documents under 50 pages for best retrieval quality — split large manuals into chapters.',
+  'Large documents (50+ pages) are automatically split into labelled sections during ingestion — no manual splitting needed.',
 ]
 
 const WORKFLOWS = [
