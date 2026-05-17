@@ -37,7 +37,7 @@ Write-Host "[2/6] Installing dependencies..."
 Invoke-Remote "cd $AppDir && npm install --omit=dev"
 
 Write-Host "[3/6] Running DB migrations..."
-Invoke-Remote "cd $AppDir && DATABASE_URL='$DbUrl' npx prisma db push --schema=../../prisma/schema.prisma"
+Invoke-Remote "cd $AppDir && DATABASE_URL='$DbUrl' npx prisma db push --schema=../../prisma/schema.prisma --accept-data-loss"
 
 Write-Host "[4/6] Building Next.js app..."
 Invoke-Remote "cd $AppDir && npm run build"
