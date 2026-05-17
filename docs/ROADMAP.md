@@ -35,10 +35,10 @@ Features that help users and admins get more out of the system.
 
 | # | Feature | Status |
 |---|---------|--------|
-| 3.1 | **Saved / pinned answers** — bookmark an AI response for later | 🔲 Planned |
-| 3.2 | **Workflow status page** — dedicated page listing all submitted requests + approval state | 🔲 Planned |
-| 3.3 | **Chat export** — download a conversation as PDF or plain text | 🔲 Planned |
-| 3.4 | **Multi-department search** — users with multi-dept access can search across both | 🔲 Planned |
+| 3.1 | **Saved / pinned answers** — bookmark an AI response for later | ✅ Done |
+| 3.2 | **Workflow status panel** — slide-over showing all submitted requests + approval state | ✅ Done |
+| 3.3 | **Chat export** — download current conversation as markdown | ✅ Done |
+| 3.4 | **Multi-department search** — RAG searches across all depts the user belongs to | ✅ Done |
 
 ---
 

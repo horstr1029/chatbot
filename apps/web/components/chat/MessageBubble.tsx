@@ -11,6 +11,7 @@ interface MessageBubbleProps {
   isStreaming?: boolean
   messageId?: string
   sessionId?: string
+  onSaved?: (messageId: string, saved: boolean) => void
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -37,6 +38,39 @@ function CopyButton({ text }: { text: string }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
         </svg>
       )}
+    </button>
+  )
+}
+
+function BookmarkButton({ messageId, sessionId, content }: { messageId: string; sessionId: string; content: string }) {
+  const [saved, setSaved] = useState(false)
+
+  async function toggle() {
+    if (saved) {
+      setSaved(false)
+      return
+    }
+    setSaved(true)
+    await fetch('/api/chat/saved', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messageId, sessionId, content }),
+    })
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      title={saved ? 'Saved' : 'Save answer'}
+      className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${
+        saved
+          ? 'text-brand-600 bg-brand-50'
+          : 'text-text-muted hover:text-text-secondary hover:bg-surface-secondary'
+      }`}
+    >
+      <svg className="w-3.5 h-3.5" fill={saved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+      </svg>
     </button>
   )
 }
@@ -128,6 +162,7 @@ export function MessageBubble({
         {!isStreaming && messageId && sessionId && (
           <div className="flex items-center gap-1 mt-1.5">
             <CopyButton text={content} />
+            <BookmarkButton messageId={messageId} sessionId={sessionId} content={content} />
             <FeedbackButtons messageId={messageId} sessionId={sessionId} />
           </div>
         )}

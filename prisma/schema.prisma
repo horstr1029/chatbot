@@ -119,6 +119,17 @@ model SystemSetting {
   updatedAt DateTime @updatedAt
 }
 
+model SavedMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  sessionId String
+  messageId String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@unique([userId, messageId])
+}
+
 model Announcement {
   id          String     @id @default(cuid())
   deptId      String

@@ -21,9 +21,10 @@ function qdrant() {
   })
 }
 
-export async function retrieve(query: string, dept: Department): Promise<RetrievedChunk[]> {
+export async function retrieve(query: string, dept: Department, extraDeptIds: string[] = []): Promise<RetrievedChunk[]> {
   const vector = await embedQuery(query, dept)
   const client = qdrant()
+  const deptFilter = [dept.id, ...extraDeptIds, 'global']
 
   const results = await client.search(COLLECTION, {
     vector,
@@ -32,7 +33,7 @@ export async function retrieve(query: string, dept: Department): Promise<Retriev
       must: [
         {
           key: 'dept_ids',
-          match: { any: [dept.id, 'global'] },
+          match: { any: deptFilter },
         },
       ],
     },

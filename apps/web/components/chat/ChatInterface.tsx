@@ -7,6 +7,8 @@ import { Sidebar } from './Sidebar'
 import { MessageBubble, TypingIndicator } from './MessageBubble'
 import { Composer } from './Composer'
 import { DocsPanel } from './DocsPanel'
+import { SavedPanel } from './SavedPanel'
+import { WorkflowsPanel } from './WorkflowsPanel'
 import { AnnouncementBanner } from './AnnouncementBanner'
 import type { Citation } from './CitationChip'
 
@@ -44,6 +46,8 @@ export function ChatInterface({
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [citationsMap, setCitationsMap] = useState<Record<string, Citation[]>>({})
   const [docsOpen, setDocsOpen] = useState(false)
+  const [savedOpen, setSavedOpen] = useState(false)
+  const [workflowsOpen, setWorkflowsOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pendingCitations = useRef<Citation[]>([])
   const sessionIdRef = useRef<string | null>(null)
@@ -130,6 +134,20 @@ export function ChatInterface({
     append({ role: 'user', content: q })
   }
 
+  function exportChat() {
+    if (!messages.length) return
+    const lines = messages.map((m) =>
+      `## ${m.role === 'user' ? 'You' : 'Assistant'}\n\n${m.content}`
+    )
+    const md = `# ${title}\n\n${lines.join('\n\n---\n\n')}`
+    const blob = new Blob([md], { type: 'text/markdown' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `${title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.md`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   const title = messages.find((m) => m.role === 'user')?.content.slice(0, 40) ?? 'New chat'
   const suggestions = SUGGESTED_QUESTIONS(deptName)
 
@@ -153,6 +171,23 @@ export function ChatInterface({
           <h1 className="flex-1 text-[14px] font-semibold text-text-primary truncate">
             {messages.length > 0 ? title : 'New conversation'}
           </h1>
+          {messages.length > 0 && (
+            <button onClick={exportChat} title="Export conversation" className="w-7 h-7 flex items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
+          )}
+          <button onClick={() => setSavedOpen(true)} title="Saved answers" className="w-7 h-7 flex items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </button>
+          <button onClick={() => setWorkflowsOpen(true)} title="My workflows" className="w-7 h-7 flex items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </button>
           <button
             onClick={() => setDocsOpen(true)}
             className="text-[11px] font-medium px-2 py-1 rounded bg-surface-tertiary text-text-muted hover:bg-brand-50 hover:text-brand-600 transition-colors"
@@ -218,12 +253,9 @@ export function ChatInterface({
         />
       </div>
 
-      <DocsPanel
-        open={docsOpen}
-        onClose={() => setDocsOpen(false)}
-        deptId={deptId}
-        deptName={deptName}
-      />
+      <DocsPanel open={docsOpen} onClose={() => setDocsOpen(false)} deptId={deptId} deptName={deptName} />
+      <SavedPanel open={savedOpen} onClose={() => setSavedOpen(false)} />
+      <WorkflowsPanel open={workflowsOpen} onClose={() => setWorkflowsOpen(false)} />
     </div>
   )
 }

@@ -71,7 +71,12 @@ export async function POST(req: Request) {
   // ── RAG / general path ─────────────────────────────────────────
   let context = { contextBlock: '', citations: [] as { id: string; name: string; url: string; text: string }[] }
   if (intent === 'DOC_QUESTION') {
-    const chunks = await retrieve(userMessage, dept)
+    const memberships = await prisma.userDepartment.findMany({
+      where: { userId: ctx.user_id },
+      select: { deptId: true },
+    })
+    const extraDeptIds = memberships.map((m) => m.deptId).filter((id) => id !== dept.id)
+    const chunks = await retrieve(userMessage, dept, extraDeptIds)
     context = buildContext(chunks)
   }
 
