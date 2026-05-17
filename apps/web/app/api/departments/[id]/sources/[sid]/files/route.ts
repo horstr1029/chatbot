@@ -24,7 +24,8 @@ export const GET = withErrorHandler(async (_req, ctx) => {
   const client = qdrant()
   const seen = new Set<string>()
   const files: { name: string; url: string }[] = []
-  let offset: string | number | null = null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let offset: any = undefined
 
   do {
     const result = await client.scroll(COLLECTION, {
@@ -33,7 +34,7 @@ export const GET = withErrorHandler(async (_req, ctx) => {
       },
       with_payload: ['file_name', 'source_url'],
       limit: 250,
-      offset: offset ?? undefined,
+      offset,
     })
 
     for (const point of result.points) {
@@ -44,8 +45,8 @@ export const GET = withErrorHandler(async (_req, ctx) => {
       }
     }
 
-    offset = result.next_page_offset ?? null
-  } while (offset !== null)
+    offset = result.next_page_offset ?? undefined
+  } while (offset !== undefined)
 
   return apiResponse.success(files)
 })
