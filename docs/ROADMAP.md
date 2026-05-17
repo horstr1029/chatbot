@@ -2,6 +2,7 @@
 
 Features are grouped by phase. Each phase builds on the previous.
 Phases 1–2 are high-value, low-risk. Phases 3–4 require more infrastructure.
+Phases 5+ are expansion features — integrations, mobile, and intelligence improvements.
 
 ---
 
@@ -51,6 +52,20 @@ Larger features requiring additional infrastructure or external integrations.
 | 4.1 | **Weekly email digest** — popular Q&A summary sent to dept admins | ✅ Done |
 | 4.2 | **Embeddable widget** — drop-in chat snippet for the company intranet | ✅ Done |
 | 4.3 | **Answer quality dashboard** — admin view of thumbs ratings + low-scoring queries | ✅ Done |
+
+---
+
+## Phase 5 — Mobile, integrations & intelligence
+
+Expansion features that increase reach and deepen the AI experience.
+
+| # | Feature | Status |
+|---|---------|--------|
+| 5.1 | **Mobile / PWA** — installable web app with push notifications for workflow approvals | 🔲 Planned |
+| 5.2 | **Slack / Teams bot** — query the chatbot and receive workflow approval alerts directly in Slack or Teams | 🔲 Planned |
+| 5.3 | **Usage analytics** — super admin dashboard showing active users, peak hours, top search topics, and uncited documents | 🔲 Planned |
+| 5.4 | **Document management UI** — upload PDFs directly in the admin panel with re-index, delete, and expiry date per document | 🔲 Planned |
+| 5.5 | **AI improvements** — follow-up question suggestions, confidence indicator on responses, persistent conversation memory across sessions | 🔲 Planned |
 
 ---
 
