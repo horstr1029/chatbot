@@ -34,7 +34,7 @@ export function AnnouncementBanner({ deptId }: { deptId: string }) {
           </svg>
           <p className="flex-1 text-[12.5px] text-brand-900 leading-relaxed">{a.content}</p>
           <button
-            onClick={() => setDismissed((prev) => new Set([...prev, a.id]))}
+            onClick={() => setDismissed((prev) => new Set(Array.from(prev).concat(a.id)))}
             className="text-brand-400 hover:text-brand-600 flex-shrink-0 mt-0.5 transition-colors"
             title="Dismiss"
           >
