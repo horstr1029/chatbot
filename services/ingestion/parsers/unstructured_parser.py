@@ -1,15 +1,23 @@
 import io
 import tempfile
 import os
-from typing import NamedTuple
+from typing import NamedTuple, TypedDict
 
 from unstructured.partition.auto import partition
-from unstructured.documents.elements import Table, Element
+from unstructured.documents.elements import Title, Table, Element
+
+
+class ParsedElement(TypedDict):
+    text: str
+    page_number: int
+    element_type: str  # "Title", "NarrativeText", "Table", etc.
 
 
 class ParseResult(NamedTuple):
     text: str
     tables: list[str]
+    elements: list[ParsedElement]
+    page_count: int
 
 
 def parse_bytes(file_bytes: bytes, file_name: str) -> ParseResult:
@@ -26,18 +34,32 @@ def parse_bytes(file_bytes: bytes, file_name: str) -> ParseResult:
 
     text_parts: list[str] = []
     table_parts: list[str] = []
+    parsed_elements: list[ParsedElement] = []
+    max_page = 0
 
     for el in elements:
+        page_num: int = getattr(getattr(el, "metadata", None), "page_number", None) or 0
+        if page_num > max_page:
+            max_page = page_num
+
         if isinstance(el, Table):
             md = _table_to_markdown(el)
-            table_parts.append(md)
-            text_parts.append(md)
+            if md:
+                table_parts.append(md)
+                text_parts.append(md)
+                parsed_elements.append({"text": md, "page_number": page_num, "element_type": "Table"})
         else:
-            text_parts.append(str(el).strip())
+            t = str(el).strip()
+            if t:
+                text_parts.append(t)
+                element_type = type(el).__name__
+                parsed_elements.append({"text": t, "page_number": page_num, "element_type": element_type})
 
     return ParseResult(
         text="\n\n".join(t for t in text_parts if t),
         tables=table_parts,
+        elements=parsed_elements,
+        page_count=max_page,
     )
 
 

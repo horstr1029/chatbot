@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from chunker import chunk_text
+from chunker import chunk_text, split_into_chapters, PAGE_SPLIT_THRESHOLD
 from embedder import embed_texts
 from parsers.unstructured_parser import parse_bytes
 from qdrant_store import delete_by_source, ensure_collection, upsert_chunks
@@ -35,14 +35,15 @@ class ParseRequest(BaseModel):
 class ParseResponse(BaseModel):
     source_id: str
     chunks_upserted: int
+    splits: int = 1
 
 
 class ResyncRequest(BaseModel):
     source_id: str
     source_name: str
     source_type: str          # GOOGLE_DRIVE | SHAREPOINT
-    folder_id: str | None = None   # Google Drive folder ID
-    source_url: str | None = None  # SharePoint URL or Drive URL
+    folder_id: str | None = None
+    source_url: str | None = None
     dept_ids: list[str] = []
 
 
@@ -70,13 +71,37 @@ def parse(req: ParseRequest):
     if not parse_result.text.strip():
         return ParseResponse(source_id=req.source_id, chunks_upserted=0)
 
+    total_chunks = 0
+
+    if parse_result.page_count > PAGE_SPLIT_THRESHOLD:
+        logger.info(
+            "Document '%s' has %d pages — auto-splitting",
+            req.file_name, parse_result.page_count,
+        )
+        splits = split_into_chapters(parse_result.elements, parse_result.page_count)
+        for split in splits:
+            split_name = f"{req.source_name} — {split['title']}"
+            chunks = chunk_text(split["text"])
+            if not chunks:
+                continue
+            vectors = embed_texts([c["text"] for c in chunks])
+            upsert_chunks(
+                chunks=chunks,
+                vectors=vectors,
+                source_id=req.source_id,
+                source_name=split_name,
+                source_url=req.source_url,
+                dept_ids=req.dept_ids,
+                file_name=split_name,
+            )
+            total_chunks += len(chunks)
+        return ParseResponse(source_id=req.source_id, chunks_upserted=total_chunks, splits=len(splits))
+
     chunks = chunk_text(parse_result.text)
     if not chunks:
         return ParseResponse(source_id=req.source_id, chunks_upserted=0)
 
-    texts = [c["text"] for c in chunks]
-    vectors = embed_texts(texts)
-
+    vectors = embed_texts([c["text"] for c in chunks])
     upsert_chunks(
         chunks=chunks,
         vectors=vectors,
@@ -85,8 +110,9 @@ def parse(req: ParseRequest):
         source_url=req.source_url,
         dept_ids=req.dept_ids,
     )
+    total_chunks = len(chunks)
 
-    return ParseResponse(source_id=req.source_id, chunks_upserted=len(chunks))
+    return ParseResponse(source_id=req.source_id, chunks_upserted=total_chunks)
 
 
 @app.post("/resync", response_model=ResyncResponse)
@@ -117,20 +143,45 @@ def resync(req: ResyncRequest):
                 parse_result = parse_bytes(file_bytes, f["name"])
                 if not parse_result.text.strip():
                     continue
-                chunks = chunk_text(parse_result.text)
-                if not chunks:
-                    continue
-                vectors = embed_texts([c["text"] for c in chunks])
-                upsert_chunks(
-                    chunks=chunks,
-                    vectors=vectors,
-                    source_id=req.source_id,
-                    source_name=req.source_name,
-                    source_url=f.get("webViewLink"),
-                    dept_ids=req.dept_ids,
-                    file_name=f["name"],
-                )
-                total_chunks += len(chunks)
+
+                if parse_result.page_count > PAGE_SPLIT_THRESHOLD:
+                    logger.info(
+                        "File '%s' has %d pages — auto-splitting",
+                        f["name"], parse_result.page_count,
+                    )
+                    splits = split_into_chapters(parse_result.elements, parse_result.page_count)
+                    for split in splits:
+                        split_name = f"{f['name']} — {split['title']}"
+                        chunks = chunk_text(split["text"])
+                        if not chunks:
+                            continue
+                        vectors = embed_texts([c["text"] for c in chunks])
+                        upsert_chunks(
+                            chunks=chunks,
+                            vectors=vectors,
+                            source_id=req.source_id,
+                            source_name=req.source_name,
+                            source_url=f.get("webViewLink"),
+                            dept_ids=req.dept_ids,
+                            file_name=split_name,
+                        )
+                        total_chunks += len(chunks)
+                else:
+                    chunks = chunk_text(parse_result.text)
+                    if not chunks:
+                        continue
+                    vectors = embed_texts([c["text"] for c in chunks])
+                    upsert_chunks(
+                        chunks=chunks,
+                        vectors=vectors,
+                        source_id=req.source_id,
+                        source_name=req.source_name,
+                        source_url=f.get("webViewLink"),
+                        dept_ids=req.dept_ids,
+                        file_name=f["name"],
+                    )
+                    total_chunks += len(chunks)
+
                 files_processed += 1
             except Exception as e:
                 errors.append(f"{f['name']}: {e}")
@@ -157,13 +208,10 @@ def delete_source(source_id: str):
 
 
 def _extract_drive_folder_id(url: str) -> str:
-    """Extract folder ID from a Google Drive URL or return as-is if it looks like an ID."""
     import re
-    # https://drive.google.com/drive/folders/{id}
     m = re.search(r"/folders/([a-zA-Z0-9_-]+)", url)
     if m:
         return m.group(1)
-    # Raw ID (no slashes)
     if url and "/" not in url:
         return url
     return ""
