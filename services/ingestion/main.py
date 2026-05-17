@@ -128,6 +128,7 @@ def resync(req: ResyncRequest):
                     source_name=req.source_name,
                     source_url=f.get("webViewLink"),
                     dept_ids=req.dept_ids,
+                    file_name=f["name"],
                 )
                 total_chunks += len(chunks)
                 files_processed += 1

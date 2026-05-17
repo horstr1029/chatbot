@@ -54,6 +54,7 @@ def upsert_chunks(
     source_name: str,
     source_url: str | None,
     dept_ids: list[str],
+    file_name: str | None = None,
 ) -> None:
     client = _client()
     now = datetime.now(timezone.utc).isoformat()
@@ -67,6 +68,7 @@ def upsert_chunks(
                 "source_id": source_id,
                 "source_name": source_name,
                 "source_url": source_url or "",
+                "file_name": file_name or source_name,
                 "dept_ids": dept_ids,
                 "chunk_index": chunk["chunk_index"],
                 "modified_at": now,

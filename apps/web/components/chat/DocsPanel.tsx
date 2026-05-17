@@ -11,6 +11,11 @@ interface DocSource {
   createdAt: string
 }
 
+interface DocFile {
+  name: string
+  url: string
+}
+
 interface DocsPanelProps {
   open: boolean
   onClose: () => void
@@ -54,6 +59,112 @@ function timeAgo(iso: string): string {
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs}h ago`
   return `${Math.floor(hrs / 24)}d ago`
+}
+
+function SourceCard({ src, deptId }: { src: DocSource; deptId: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const [files, setFiles] = useState<DocFile[]>([])
+  const [loading, setLoading] = useState(false)
+  const [fetched, setFetched] = useState(false)
+
+  function toggle() {
+    if (!expanded && !fetched) {
+      setLoading(true)
+      fetch(`/api/departments/${deptId}/sources/${src.id}/files`)
+        .then((r) => r.json())
+        .then(({ data }) => {
+          setFiles(Array.isArray(data) ? data : [])
+          setFetched(true)
+        })
+        .catch(() => setFiles([]))
+        .finally(() => setLoading(false))
+    }
+    setExpanded((v) => !v)
+  }
+
+  return (
+    <li className="rounded-lg border border-border bg-white overflow-hidden">
+      {/* Source row */}
+      <button
+        onClick={toggle}
+        className="w-full flex items-start gap-3 p-3 hover:bg-surface-secondary transition-colors text-left"
+      >
+        <div className="w-8 h-8 rounded-md bg-brand-50 border border-brand-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <SourceIcon type={src.sourceType} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-medium text-text-primary truncate">{src.name}</p>
+          <p className="text-[11px] text-text-muted mt-0.5">{sourceLabel[src.sourceType]}</p>
+          <p className="text-[11px] text-text-muted mt-0.5">
+            {src.lastSynced ? `Synced ${timeAgo(src.lastSynced)}` : 'Not yet synced'}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0 mt-1">
+          {src.sourceUrl && (
+            <a
+              href={src.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-brand-600 transition-colors"
+              title="Open source"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          )}
+          <svg
+            className={`w-4 h-4 text-text-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {/* Expanded file list */}
+      {expanded && (
+        <div className="border-t border-border bg-surface-secondary px-3 py-2">
+          {loading && (
+            <div className="flex items-center justify-center py-3">
+              <svg className="w-4 h-4 text-text-muted animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            </div>
+          )}
+          {!loading && files.length === 0 && (
+            <p className="text-[11px] text-text-muted py-2 text-center">No indexed documents found</p>
+          )}
+          {!loading && files.length > 0 && (
+            <ul className="flex flex-col gap-1">
+              {files.map((f) => (
+                <li key={f.name} className="flex items-center gap-2 py-1">
+                  <svg className="w-3.5 h-3.5 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {f.url ? (
+                    <a
+                      href={f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[12px] text-text-secondary hover:text-brand-600 truncate transition-colors"
+                      title={f.name}
+                    >
+                      {f.name}
+                    </a>
+                  ) : (
+                    <span className="text-[12px] text-text-secondary truncate" title={f.name}>{f.name}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </li>
+  )
 }
 
 export function DocsPanel({ open, onClose, deptId, deptName }: DocsPanelProps) {
@@ -122,34 +233,7 @@ export function DocsPanel({ open, onClose, deptId, deptName }: DocsPanelProps) {
           {!loading && sources.length > 0 && (
             <ul className="flex flex-col gap-2">
               {sources.map((src) => (
-                <li
-                  key={src.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border border-border bg-white hover:bg-surface-secondary transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-md bg-brand-50 border border-brand-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <SourceIcon type={src.sourceType} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-text-primary truncate">{src.name}</p>
-                    <p className="text-[11px] text-text-muted mt-0.5">{sourceLabel[src.sourceType]}</p>
-                    <p className="text-[11px] text-text-muted mt-0.5">
-                      {src.lastSynced ? `Synced ${timeAgo(src.lastSynced)}` : 'Not yet synced'}
-                    </p>
-                  </div>
-                  {src.sourceUrl && (
-                    <a
-                      href={src.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-brand-600 flex-shrink-0 mt-0.5"
-                      title="Open source"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  )}
-                </li>
+                <SourceCard key={src.id} src={src} deptId={deptId} />
               ))}
             </ul>
           )}
@@ -158,7 +242,7 @@ export function DocsPanel({ open, onClose, deptId, deptName }: DocsPanelProps) {
         {/* Footer */}
         <div className="px-4 py-3 border-t border-border">
           <p className="text-[11px] text-text-muted text-center">
-            The chatbot searches all documents listed above
+            Click a source to see its indexed documents
           </p>
         </div>
       </div>
