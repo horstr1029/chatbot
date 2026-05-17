@@ -1,5 +1,5 @@
 import { Worker, type Job } from 'bullmq'
-import { redis } from '@/lib/redis/client'
+import { makeBullMQConnection } from '@/lib/redis/bullmq'
 import { prisma } from '@/lib/db/client'
 import type { IngestionJobData } from './ingestion.queue'
 
@@ -122,7 +122,7 @@ async function fullResync(data: Extract<IngestionJobData, { type: 'FULL_RESYNC' 
 
 export function startIngestionWorker() {
   const worker = new Worker<IngestionJobData>('ingestion', processJob, {
-    connection: redis,
+    connection: makeBullMQConnection(),
     concurrency: 3,
   })
 

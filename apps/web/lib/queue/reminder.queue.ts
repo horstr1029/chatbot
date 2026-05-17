@@ -1,5 +1,6 @@
 import { Queue, Worker } from 'bullmq'
 import { redis } from '@/lib/redis/client'
+import { makeBullMQConnection } from '@/lib/redis/bullmq'
 import { prisma } from '@/lib/db/client'
 
 interface WorkflowReminderJob {
@@ -60,6 +61,6 @@ export function startReminderWorker() {
         }) + '\n',
       )
     },
-    { connection: redis },
+    { connection: makeBullMQConnection() },
   )
 }
