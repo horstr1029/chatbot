@@ -117,3 +117,15 @@ model SystemSetting {
   value     String   @db.Text
   updatedAt DateTime @updatedAt
 }
+
+model MessageFeedback {
+  id         String   @id @default(cuid())
+  messageId  String
+  sessionId  String
+  userId     String
+  deptId     String
+  rating     Int      // 1 = thumbs up, -1 = thumbs down
+  createdAt  DateTime @default(now())
+
+  @@unique([messageId, userId])
+}

@@ -23,6 +23,13 @@ interface ChatInterfaceProps {
 
 type StoredMessage = { id: string; role: 'user' | 'assistant'; content: string }
 
+const SUGGESTED_QUESTIONS = (deptName: string) => [
+  `What documents are available for ${deptName}?`,
+  `Summarise the most important policies for ${deptName}`,
+  `What procedures should I follow for ${deptName}?`,
+  `What are the key contacts or resources for ${deptName}?`,
+]
+
 export function ChatInterface({
   deptName,
   deptId,
@@ -58,7 +65,6 @@ export function ChatInterface({
   })
 
   const persistSession = useCallback(async () => {
-    // messages snapshot is stale in closure — read from DOM state via ref
     const currentMessages = (window as unknown as { __chatMessages?: StoredMessage[] }).__chatMessages
     if (!currentMessages?.length) return
 
@@ -76,7 +82,6 @@ export function ChatInterface({
       if (!sessionIdRef.current) {
         sessionIdRef.current = data.id
         setActiveSessionId(data.id)
-        // Refresh session list
         const listRes = await fetch('/api/chat/sessions')
         if (listRes.ok) {
           const { data: list } = await listRes.json()
@@ -86,7 +91,6 @@ export function ChatInterface({
     }
   }, [])
 
-  // Keep a window ref so the onFinish closure can read current messages
   useEffect(() => {
     ;(window as unknown as { __chatMessages?: StoredMessage[] }).__chatMessages =
       messages.map((m) => ({ id: m.id, role: m.role as 'user' | 'assistant', content: m.content }))
@@ -121,7 +125,12 @@ export function ChatInterface({
     setInput('')
   }
 
+  function handleSuggestion(q: string) {
+    append({ role: 'user', content: q })
+  }
+
   const title = messages.find((m) => m.role === 'user')?.content.slice(0, 40) ?? 'New chat'
+  const suggestions = SUGGESTED_QUESTIONS(deptName)
 
   return (
     <div className="flex h-screen overflow-hidden bg-surface-secondary">
@@ -154,18 +163,29 @@ export function ChatInterface({
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-5">
           {messages.length === 0 && (
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
+            <div className="flex-1 flex flex-col items-center justify-center">
               <div className="w-12 h-12 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center mb-4">
                 <svg className="w-6 h-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <p className="text-[14px] font-medium text-text-primary mb-1">
+              <p className="text-[14px] font-medium text-text-primary mb-1 text-center">
                 Ask anything about {deptName}
               </p>
-              <p className="text-[13px] text-text-muted max-w-sm">
+              <p className="text-[13px] text-text-muted max-w-sm text-center mb-6">
                 Search documents, get answers, or request a workflow automation.
               </p>
+              <div className="grid grid-cols-2 gap-2 max-w-lg w-full">
+                {suggestions.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => handleSuggestion(q)}
+                    className="text-left px-3 py-2.5 rounded-lg border border-border bg-white text-[12px] text-text-secondary hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 transition-colors leading-snug"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -177,6 +197,8 @@ export function ChatInterface({
               citations={m.role === 'assistant' ? (citationsMap[m.id] ?? []) : []}
               initials={initials}
               isStreaming={isLoading && m.id === messages.at(-1)?.id && m.role === 'assistant'}
+              messageId={m.id}
+              sessionId={sessionIdRef.current ?? undefined}
             />
           ))}
 
