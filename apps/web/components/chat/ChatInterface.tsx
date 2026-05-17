@@ -7,6 +7,7 @@ import { Sidebar } from './Sidebar'
 import { MessageBubble, TypingIndicator } from './MessageBubble'
 import { Composer } from './Composer'
 import { DocsPanel } from './DocsPanel'
+import { AnnouncementBanner } from './AnnouncementBanner'
 import type { Citation } from './CitationChip'
 
 interface DeptOption { id: string; name: string }
@@ -205,6 +206,8 @@ export function ChatInterface({
           {isLoading && messages.at(-1)?.role === 'user' && <TypingIndicator />}
           <div ref={messagesEndRef} />
         </div>
+
+        <AnnouncementBanner deptId={deptId} />
 
         <Composer
           value={input}

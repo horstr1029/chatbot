@@ -23,9 +23,9 @@ Make it easier to understand what the chatbot knows and surface relevant info.
 
 | # | Feature | Status |
 |---|---------|--------|
-| 2.1 | **Document preview** — click a citation chip to see the exact text snippet | 🔲 Planned |
-| 2.2 | **Chat history search** — keyword search across past conversations | 🔲 Planned |
-| 2.3 | **Announcements** — dept admins can pin a message that appears above the chat composer | 🔲 Planned |
+| 2.1 | **Document preview** — click a citation chip to see the exact text snippet | ✅ Done |
+| 2.2 | **Chat history search** — keyword search across past conversations | ✅ Done |
+| 2.3 | **Announcements** — dept admins can pin a message that appears above the chat composer | ✅ Done |
 
 ---
 

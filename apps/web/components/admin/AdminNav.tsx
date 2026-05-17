@@ -19,6 +19,7 @@ export function AdminNav({ deptName, role, pendingCount }: AdminNavProps) {
     { href: '/admin/workflows', label: 'Workflows', badge: pendingCount > 0 ? pendingCount : null },
     { href: '/admin/documents', label: 'Documents' },
     { href: '/admin/users', label: 'Users' },
+    { href: '/admin/announcements', label: 'Announcements' },
     { href: '/admin/settings', label: 'Settings' },
   ]
 
