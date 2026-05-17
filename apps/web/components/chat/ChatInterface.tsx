@@ -10,6 +10,7 @@ import { DocsPanel } from './DocsPanel'
 import { SavedPanel } from './SavedPanel'
 import { WorkflowsPanel } from './WorkflowsPanel'
 import { AnnouncementBanner } from './AnnouncementBanner'
+import { HelpPanel } from './HelpPanel'
 import type { Citation } from './CitationChip'
 
 interface DeptOption { id: string; name: string }
@@ -48,6 +49,7 @@ export function ChatInterface({
   const [docsOpen, setDocsOpen] = useState(false)
   const [savedOpen, setSavedOpen] = useState(false)
   const [workflowsOpen, setWorkflowsOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pendingCitations = useRef<Citation[]>([])
   const sessionIdRef = useRef<string | null>(null)
@@ -194,6 +196,15 @@ export function ChatInterface({
           >
             {deptName} docs
           </button>
+          <button
+            onClick={() => setHelpOpen(true)}
+            title="Help & Guide"
+            className="w-7 h-7 flex items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
         </div>
 
         {/* Messages */}
@@ -256,6 +267,7 @@ export function ChatInterface({
       <DocsPanel open={docsOpen} onClose={() => setDocsOpen(false)} deptId={deptId} deptName={deptName} />
       <SavedPanel open={savedOpen} onClose={() => setSavedOpen(false)} />
       <WorkflowsPanel open={workflowsOpen} onClose={() => setWorkflowsOpen(false)} />
+      <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} deptName={deptName} />
     </div>
   )
 }
