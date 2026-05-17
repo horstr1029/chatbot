@@ -12,7 +12,10 @@ import { WorkflowsPanel } from './WorkflowsPanel'
 import { AnnouncementBanner } from './AnnouncementBanner'
 import { HelpPanel } from './HelpPanel'
 import { PushSetup } from './PushSetup'
+import { FormPreview } from './FormPreview'
+import { MeetingBriefModal } from './MeetingBriefModal'
 import type { Citation } from './CitationChip'
+import type { FormField } from '@/lib/llm/formFiller'
 
 interface DeptOption { id: string; name: string }
 
@@ -27,6 +30,11 @@ interface ChatInterfaceProps {
 }
 
 type StoredMessage = { id: string; role: 'user' | 'assistant'; content: string }
+
+interface FormData {
+  template: { id: string; name: string; fields: FormField[] }
+  filled: Record<string, string>
+}
 
 const SUGGESTED_QUESTIONS = (deptName: string) => [
   `What documents are available for ${deptName}?`,
@@ -49,13 +57,17 @@ export function ChatInterface({
   const [citationsMap, setCitationsMap] = useState<Record<string, Citation[]>>({})
   const [confidenceMap, setConfidenceMap] = useState<Record<string, number>>({})
   const [suggestionsMap, setSuggestionsMap] = useState<Record<string, string[]>>({})
+  const [formDataMap, setFormDataMap] = useState<Record<string, FormData>>({})
+  const [hiddenFormIds, setHiddenFormIds] = useState<Set<string>>(new Set())
   const [docsOpen, setDocsOpen] = useState(false)
   const [savedOpen, setSavedOpen] = useState(false)
   const [workflowsOpen, setWorkflowsOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [meetingBriefOpen, setMeetingBriefOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pendingCitations = useRef<Citation[]>([])
   const pendingConfidence = useRef<number | null>(null)
+  const pendingFormData = useRef<FormData | null>(null)
   const sessionIdRef = useRef<string | null>(null)
 
   const { messages, input, setInput, append, isLoading, setMessages } = useChat({
@@ -70,6 +82,13 @@ export function ChatInterface({
         const parsed = parseFloat(conf)
         if (!isNaN(parsed)) pendingConfidence.current = parsed
       }
+      const formDataHeader = res.headers.get('x-form-data')
+      if (formDataHeader) {
+        try {
+          const decoded = JSON.parse(atob(formDataHeader)) as FormData
+          pendingFormData.current = decoded
+        } catch {}
+      }
     },
     onFinish: async (msg) => {
       if (pendingCitations.current.length > 0) {
@@ -79,6 +98,10 @@ export function ChatInterface({
       if (pendingConfidence.current !== null) {
         setConfidenceMap((prev) => ({ ...prev, [msg.id]: pendingConfidence.current! }))
         pendingConfidence.current = null
+      }
+      if (pendingFormData.current !== null) {
+        setFormDataMap((prev) => ({ ...prev, [msg.id]: pendingFormData.current! }))
+        pendingFormData.current = null
       }
       await persistSession()
       const question = messages.findLast((m) => m.role === 'user')?.content ?? ''
@@ -144,6 +167,8 @@ export function ChatInterface({
     setCitationsMap({})
     setConfidenceMap({})
     setSuggestionsMap({})
+    setFormDataMap({})
+    setHiddenFormIds(new Set())
     sessionIdRef.current = id
     setActiveSessionId(id)
   }
@@ -155,6 +180,8 @@ export function ChatInterface({
     setCitationsMap({})
     setConfidenceMap({})
     setSuggestionsMap({})
+    setFormDataMap({})
+    setHiddenFormIds(new Set())
     sessionIdRef.current = null
   }
 
@@ -223,6 +250,15 @@ export function ChatInterface({
             </svg>
           </button>
           <button
+            onClick={() => setMeetingBriefOpen(true)}
+            title="Meeting prep brief"
+            className="w-7 h-7 flex items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <button
             onClick={() => setDocsOpen(true)}
             className="text-[11px] font-medium px-2 py-1 rounded bg-surface-tertiary text-text-muted hover:bg-brand-50 hover:text-brand-600 transition-colors"
           >
@@ -270,19 +306,31 @@ export function ChatInterface({
           )}
 
           {messages.map((m) => (
-            <MessageBubble
-              key={m.id}
-              role={m.role as 'user' | 'assistant'}
-              content={m.content}
-              citations={m.role === 'assistant' ? (citationsMap[m.id] ?? []) : []}
-              initials={initials}
-              isStreaming={isLoading && m.id === messages.at(-1)?.id && m.role === 'assistant'}
-              messageId={m.id}
-              sessionId={sessionIdRef.current ?? undefined}
-              confidence={m.role === 'assistant' ? (confidenceMap[m.id] ?? null) : null}
-              suggestions={m.role === 'assistant' ? (suggestionsMap[m.id] ?? []) : []}
-              onSuggestion={handleSuggestion}
-            />
+            <div key={m.id}>
+              <MessageBubble
+                role={m.role as 'user' | 'assistant'}
+                content={m.content}
+                citations={m.role === 'assistant' ? (citationsMap[m.id] ?? []) : []}
+                initials={initials}
+                isStreaming={isLoading && m.id === messages.at(-1)?.id && m.role === 'assistant'}
+                messageId={m.id}
+                sessionId={sessionIdRef.current ?? undefined}
+                confidence={m.role === 'assistant' ? (confidenceMap[m.id] ?? null) : null}
+                suggestions={m.role === 'assistant' ? (suggestionsMap[m.id] ?? []) : []}
+                onSuggestion={handleSuggestion}
+              />
+              {m.role === 'assistant' && formDataMap[m.id] && !hiddenFormIds.has(m.id) && (
+                <div className="ml-9">
+                  <FormPreview
+                    template={formDataMap[m.id].template}
+                    filled={formDataMap[m.id].filled}
+                    onCancel={() =>
+                      setHiddenFormIds((prev) => new Set(Array.from(prev).concat(m.id)))
+                    }
+                  />
+                </div>
+              )}
+            </div>
           ))}
 
           {isLoading && messages.at(-1)?.role === 'user' && <TypingIndicator />}
@@ -304,6 +352,11 @@ export function ChatInterface({
       <SavedPanel open={savedOpen} onClose={() => setSavedOpen(false)} />
       <WorkflowsPanel open={workflowsOpen} onClose={() => setWorkflowsOpen(false)} />
       <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} deptName={deptName} />
+      <MeetingBriefModal
+        open={meetingBriefOpen}
+        onClose={() => setMeetingBriefOpen(false)}
+        deptName={deptName}
+      />
     </div>
   )
 }

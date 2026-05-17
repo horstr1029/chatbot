@@ -26,6 +26,29 @@ function relativeTime(date: Date | null) {
   return new Date(date).toLocaleDateString()
 }
 
+function expiryClass(expiresAt: Date | null): string {
+  if (!expiresAt) return 'text-text-muted'
+  const diff = new Date(expiresAt).getTime() - Date.now()
+  const days = diff / (1000 * 60 * 60 * 24)
+  if (days <= 7) return 'text-red-600 font-medium'
+  if (days <= 30) return 'text-amber-600 font-medium'
+  return 'text-text-secondary'
+}
+
+function formatExpiry(expiresAt: Date | null): string {
+  if (!expiresAt) return '—'
+  return new Date(expiresAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function toDateInputValue(expiresAt: Date | null): string {
+  if (!expiresAt) return ''
+  const d = new Date(expiresAt)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
 export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
@@ -33,6 +56,8 @@ export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
   const [adding, setAdding] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadMsg, setUploadMsg] = useState<string | null>(null)
+  const [editingExpiry, setEditingExpiry] = useState<string | null>(null)
+  const [expiryLoading, setExpiryLoading] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '',
     sourceType: 'LOCAL' as SourceType,
@@ -103,6 +128,19 @@ export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
     router.refresh()
   }
 
+  async function handleExpiryChange(sid: string, value: string) {
+    setExpiryLoading(sid)
+    const expiresAt = value ? new Date(value).toISOString() : null
+    await fetch(`/api/departments/${deptId}/sources/${sid}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expiresAt }),
+    })
+    setExpiryLoading(null)
+    setEditingExpiry(null)
+    router.refresh()
+  }
+
   return (
     <div className="space-y-4">
       <div className="bg-white border border-border rounded-lg overflow-hidden">
@@ -112,7 +150,7 @@ export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-surface-secondary">
-                {['Name', 'Type', 'Path / URL', 'Last synced', ''].map((h) => (
+                {['Name', 'Type', 'Path / URL', 'Last synced', 'Expires', ''].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-[12px] font-medium text-text-muted">{h}</th>
                 ))}
               </tr>
@@ -121,6 +159,7 @@ export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
               {sources.map((s) => {
                 const status = syncStatus[s.id]
                 const canSync = s.sourceType !== 'LOCAL'
+                const isEditingExpiry = editingExpiry === s.id
                 return (
                   <tr key={s.id} className="hover:bg-surface-secondary transition-colors">
                     <td className="px-4 py-3 text-[13px] text-text-primary font-medium">{s.name}</td>
@@ -145,6 +184,33 @@ export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
                         <span className="text-red-600 font-medium">Failed</span>
                       ) : (
                         relativeTime(s.lastSynced)
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-[12px] whitespace-nowrap">
+                      {isEditingExpiry ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="date"
+                            defaultValue={toDateInputValue(s.expiresAt)}
+                            disabled={expiryLoading === s.id}
+                            className="rounded border border-border px-1.5 py-0.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-brand-600"
+                            onChange={(e) => handleExpiryChange(s.id, e.target.value)}
+                          />
+                          <button
+                            onClick={() => setEditingExpiry(null)}
+                            className="text-text-muted hover:text-text-secondary text-[11px] px-1"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setEditingExpiry(s.id)}
+                          className={`hover:underline ${expiryClass(s.expiresAt)}`}
+                          title="Click to set expiry date"
+                        >
+                          {expiryLoading === s.id ? '…' : formatExpiry(s.expiresAt)}
+                        </button>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">

@@ -77,6 +77,64 @@ export async function sendDigestEmail(
   })
 }
 
+export async function sendExpiryAlert(
+  to: string,
+  name: string | null,
+  deptName: string,
+  sources: { name: string; expiresAt: Date }[],
+) {
+  const s = await getSmtpSettings()
+  if (!s.host || !s.user) return
+
+  const transport = await createTransport()
+  const from = s.from || `"Company Chatbot" <${s.user}>`
+  const displayName = name ?? to
+  const count = sources.length
+
+  const rows = sources
+    .map(
+      (src) =>
+        `<tr>
+          <td style="padding:8px 12px;font-size:13px;color:#111827;border-bottom:1px solid #e5e7eb;">${src.name}</td>
+          <td style="padding:8px 12px;font-size:13px;color:#d97706;border-bottom:1px solid #e5e7eb;white-space:nowrap;">${new Date(src.expiresAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+        </tr>`,
+    )
+    .join('')
+
+  await transport.sendMail({
+    from,
+    to,
+    subject: `${deptName} — ${count} document${count === 1 ? '' : 's'} expiring soon`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family:'DM Sans',Arial,sans-serif;background:#f9fafb;margin:0;padding:32px;">
+        <div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:36px;">
+          <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">${deptName}</p>
+          <h2 style="margin:0 0 8px;font-size:18px;color:#111827;">Document expiry alert</h2>
+          <p style="margin:0 0 20px;font-size:13px;color:#4b5563;">
+            Hi ${displayName}, the following ${count === 1 ? 'document expires' : `${count} documents expire`} within the next 30 days. Please review and update them.
+          </p>
+
+          <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:24px;">
+            <thead>
+              <tr style="background:#f9fafb;">
+                <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e5e7eb;">Document</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e5e7eb;">Expires</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+
+          <a href="${APP_URL}/admin/documents" style="display:inline-block;padding:10px 20px;background:#111827;color:#ffffff;border-radius:6px;font-size:13px;font-weight:500;text-decoration:none;">Manage documents</a>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `${deptName} — document expiry alert\n\nHi ${displayName},\n\nThe following documents expire within 30 days:\n\n${sources.map((s) => `- ${s.name}: ${new Date(s.expiresAt).toLocaleDateString()}`).join('\n')}\n\n${APP_URL}/admin/documents`,
+  })
+}
+
 export async function sendWelcomeEmail(to: string, name: string | null, tempPassword: string) {
   const s = await getSmtpSettings()
   if (!s.host || !s.user) {

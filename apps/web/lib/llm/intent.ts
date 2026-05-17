@@ -1,21 +1,23 @@
 import type { Department } from '@prisma/client'
 import { getLLMClient } from './router'
 
-export type Intent = 'DOC_QUESTION' | 'WORKFLOW_REQUEST' | 'GENERAL_CHAT'
+export type Intent = 'DOC_QUESTION' | 'WORKFLOW_REQUEST' | 'FORM_REQUEST' | 'GENERAL_CHAT'
 
-const VALID_INTENTS = new Set<Intent>(['DOC_QUESTION', 'WORKFLOW_REQUEST', 'GENERAL_CHAT'])
+const VALID_INTENTS = new Set<Intent>(['DOC_QUESTION', 'WORKFLOW_REQUEST', 'FORM_REQUEST', 'GENERAL_CHAT'])
 
 const PROMPT = (message: string) =>
-  `Classify the user message below into exactly one of: DOC_QUESTION, WORKFLOW_REQUEST, GENERAL_CHAT.
+  `Classify the user message below into exactly one of: DOC_QUESTION, WORKFLOW_REQUEST, FORM_REQUEST, GENERAL_CHAT.
 
 Definitions:
 - DOC_QUESTION: asking about, searching for, or listing company documents, files, policies, or information stored in the knowledge base (e.g. "what documents do you have?", "show me the HR policy", "what files are available?", "find the leave application form")
 - WORKFLOW_REQUEST: explicitly asking to automate, build, create, trigger, or run a process or workflow (e.g. "create an onboarding workflow", "automate my leave request", "set up a reminder process")
+- FORM_REQUEST: asking to fill in, submit, or complete a form or application (e.g. "submit a leave request", "fill in the expense form", "I need to request leave", "I want to apply for", "submit a request for")
 - GENERAL_CHAT: greetings, thank-you, off-topic, clarifications, or anything that doesn't fit the above
 
 Rules:
-- Questions about WHAT documents exist are DOC_QUESTION, not WORKFLOW_REQUEST
+- Questions about WHAT documents exist are DOC_QUESTION, not WORKFLOW_REQUEST or FORM_REQUEST
 - Only classify as WORKFLOW_REQUEST if the user explicitly asks to build or automate something
+- Classify as FORM_REQUEST if the user wants to submit or fill a concrete request or application
 
 Message: "${message}"
 Respond with only the classification label, nothing else.`

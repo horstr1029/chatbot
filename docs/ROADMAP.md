@@ -61,11 +61,35 @@ Expansion features that increase reach and deepen the AI experience.
 
 | # | Feature | Status |
 |---|---------|--------|
-| 5.1 | **Mobile / PWA** — installable web app with push notifications for workflow approvals | 🔲 Planned |
-| 5.2 | **Slack / Teams bot** — query the chatbot and receive workflow approval alerts directly in Slack or Teams | 🔲 Planned |
-| 5.3 | **Usage analytics** — super admin dashboard showing active users, peak hours, top search topics, and uncited documents | 🔲 Planned |
-| 5.4 | **Document management UI** — upload PDFs directly in the admin panel with re-index, delete, and expiry date per document | 🔲 Planned |
-| 5.5 | **AI improvements** — follow-up question suggestions, confidence indicator on responses, persistent conversation memory across sessions | 🔲 Planned |
+| 5.1 | **Mobile / PWA** — installable web app with push notifications for workflow approvals | ✅ Done |
+| 5.2 | **Slack notifications** — workflow approval/rejection alerts posted to a dept Slack channel | ✅ Done |
+| 5.3 | **Usage analytics** — super admin dashboard: sessions/day, by-dept, peak hours, top users, top questions | ✅ Done |
+| 5.4 | **Document upload** — upload PDFs/DOCX directly in the admin panel; queued for ingestion immediately | ✅ Done |
+| 5.5 | **AI improvements** — follow-up question chips, answer confidence dot, auto-split documents >50 pages | ✅ Done |
+
+---
+
+## Phase 6 — Business process automation
+
+Structured tooling to reduce manual, repetitive work across departments.
+
+| # | Feature | Status |
+|---|---------|--------|
+| 6.1 | **Document expiry alerts** — weekly job emails dept admins when policies/contracts expire within 30 days | 🔲 Planned |
+| 6.2 | **Smart form filler** — describe a task in chat, AI pre-fills the department form template and submits it | 🔲 Planned |
+| 6.3 | **Meeting prep brief** — auto-pull relevant docs, past decisions, and action items before a scheduled meeting | 🔲 Planned |
+
+---
+
+## Phase 7 — Advanced workflow & cross-department
+
+Deeper automation features requiring more infrastructure.
+
+| # | Feature | Status |
+|---|---------|--------|
+| 7.1 | **Multi-step approval chains** — sequential approvals (Manager → Finance → Director) before workflow execution | 🔲 Planned |
+| 7.2 | **Recurring task reminders** — user sets a schedule; AI sends a contextual briefing from the knowledge base | 🔲 Planned |
+| 7.3 | **Cross-department request routing** — request raised in one dept, actioned by another, with handoff tracking | 🔲 Planned |
 
 ---
 

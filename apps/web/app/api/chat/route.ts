@@ -14,6 +14,8 @@ import { prisma } from '@/lib/db/client'
 import { apiResponse } from '@/lib/api/response'
 import { rateLimit } from '@/lib/api/rateLimit'
 import { scheduleWorkflowReminder } from '@/lib/queue/reminder.queue'
+import { fillForm } from '@/lib/llm/formFiller'
+import type { FormField } from '@/lib/llm/formFiller'
 import { z } from 'zod'
 
 function log(level: 'info' | 'warn' | 'error', event: string, data?: object) {
@@ -68,6 +70,28 @@ export async function POST(req: Request) {
     return result.toDataStreamResponse({ headers: { 'x-intent': intent } })
   }
 
+  // ── Form request path ──────────────────────────────────────────
+  if (intent === 'FORM_REQUEST') {
+    const formResult = await handleFormRequest(userMessage, ctx.dept_id, dept.llmModel)
+    if (formResult) {
+      const { template, filled } = formResult
+      const replyText = "I've pre-filled the form below — review and submit when ready."
+      const formDataHeader = Buffer.from(JSON.stringify({ template, filled })).toString('base64')
+      const result = await streamText({
+        model: ollamaProvider()(dept.llmModel),
+        messages: [{ role: 'user', content: replyText }],
+        system: 'Repeat the message exactly as given, word for word.',
+      })
+      return result.toDataStreamResponse({
+        headers: {
+          'x-intent': 'FORM_REQUEST',
+          'x-form-data': formDataHeader,
+        },
+      })
+    }
+    // No templates — fall through to normal chat
+  }
+
   // ── RAG / general path ─────────────────────────────────────────
   let context: { contextBlock: string; citations: { id: string; name: string; url: string; text: string }[]; avgScore: number | null } =
     { contextBlock: '', citations: [], avgScore: null }
@@ -101,6 +125,37 @@ export async function POST(req: Request) {
     })
     return errorResult.toDataStreamResponse({ headers: { 'x-citations': '[]', 'x-intent': intent, 'x-confidence': '' } })
   }
+}
+
+async function handleFormRequest(
+  userMessage: string,
+  deptId: string,
+  llmModel: string,
+): Promise<{ template: { id: string; name: string; fields: FormField[] }; filled: Record<string, string> } | null> {
+  const templates = await prisma.formTemplate.findMany({
+    where: { deptId, active: true },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  if (templates.length === 0) return null
+
+  // Find best matching template — check if any template name words appear in userMessage
+  const lower = userMessage.toLowerCase()
+  let best = templates[0]
+  let bestScore = 0
+
+  for (const t of templates) {
+    const words = t.name.toLowerCase().split(/\s+/)
+    const score = words.filter((w) => w.length > 2 && lower.includes(w)).length
+    if (score > bestScore) {
+      bestScore = score
+      best = t
+    }
+  }
+
+  const fields = best.fields as FormField[]
+  const filled = await fillForm(userMessage, { id: best.id, name: best.name, fields }, llmModel)
+  return { template: { id: best.id, name: best.name, fields }, filled }
 }
 
 async function handleWorkflowRequest(
