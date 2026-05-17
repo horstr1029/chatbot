@@ -153,6 +153,33 @@ const FEATURES = [
     title: 'Meeting prep brief',
     desc: 'Click the calendar icon (📅) in the top bar before a meeting. Enter the meeting title and optional agenda — the AI searches your department\'s documents and streams a structured briefing covering background, relevant policies, open questions, and suggested agenda points.',
   },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+      </svg>
+    ),
+    title: 'Multi-step approval chains',
+    desc: 'Workflows can require sequential sign-offs — e.g. Manager → Finance → Director. Each approver receives a notification and can approve or reject at their step. The workflow only executes once all steps are approved. Track progress in the Workflows panel (⚡ top bar).',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    title: 'Recurring reminders',
+    desc: 'Ask the AI to remind you of anything on a schedule — e.g. "Remind me every Monday at 9am to submit my timesheet". Click the bell icon (🔔) in the top bar to view and manage your reminders. Reminders arrive as push notifications.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+      </svg>
+    ),
+    title: 'Cross-department requests',
+    desc: 'Need something from another department? Click the globe icon (🌐) in the top bar to raise a cross-department request. The target department admin can respond, reassign, or resolve it. Track incoming and outgoing requests in Admin → Requests.',
+  },
 ]
 
 const FOLDER_STRUCTURE = `Google Drive / SharePoint root
