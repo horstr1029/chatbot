@@ -43,7 +43,7 @@ Write-Host "[4/6] Building Next.js app..."
 Invoke-Remote "cd $AppDir && npm run build"
 
 Write-Host "[5/6] Copying static assets..."
-Invoke-Remote "cp -r $AppDir/.next/static $AppDir/.next/standalone/.next/static"
+Invoke-Remote "cp -r $AppDir/.next/static $AppDir/.next/standalone/.next/static && cp -r $AppDir/public $AppDir/.next/standalone/public"
 
 Write-Host "[6/6] Restarting app..."
 Invoke-Remote "pm2 restart chatbot-web --update-env"
