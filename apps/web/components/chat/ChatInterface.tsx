@@ -11,6 +11,7 @@ import { SavedPanel } from './SavedPanel'
 import { WorkflowsPanel } from './WorkflowsPanel'
 import { AnnouncementBanner } from './AnnouncementBanner'
 import { HelpPanel } from './HelpPanel'
+import { PushSetup } from './PushSetup'
 import type { Citation } from './CitationChip'
 
 interface DeptOption { id: string; name: string }
@@ -46,12 +47,15 @@ export function ChatInterface({
   const [sessions, setSessions] = useState(initialSessions)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [citationsMap, setCitationsMap] = useState<Record<string, Citation[]>>({})
+  const [confidenceMap, setConfidenceMap] = useState<Record<string, number>>({})
+  const [suggestionsMap, setSuggestionsMap] = useState<Record<string, string[]>>({})
   const [docsOpen, setDocsOpen] = useState(false)
   const [savedOpen, setSavedOpen] = useState(false)
   const [workflowsOpen, setWorkflowsOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pendingCitations = useRef<Citation[]>([])
+  const pendingConfidence = useRef<number | null>(null)
   const sessionIdRef = useRef<string | null>(null)
 
   const { messages, input, setInput, append, isLoading, setMessages } = useChat({
@@ -61,13 +65,37 @@ export function ChatInterface({
       if (raw) {
         try { pendingCitations.current = JSON.parse(raw) } catch {}
       }
+      const conf = res.headers.get('x-confidence')
+      if (conf) {
+        const parsed = parseFloat(conf)
+        if (!isNaN(parsed)) pendingConfidence.current = parsed
+      }
     },
     onFinish: async (msg) => {
       if (pendingCitations.current.length > 0) {
         setCitationsMap((prev) => ({ ...prev, [msg.id]: pendingCitations.current }))
         pendingCitations.current = []
       }
+      if (pendingConfidence.current !== null) {
+        setConfidenceMap((prev) => ({ ...prev, [msg.id]: pendingConfidence.current! }))
+        pendingConfidence.current = null
+      }
       await persistSession()
+      const question = messages.findLast((m) => m.role === 'user')?.content ?? ''
+      if (question && msg.content) {
+        fetch('/api/chat/suggestions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, answer: msg.content }),
+        })
+          .then((r) => r.json())
+          .then(({ data }) => {
+            if (Array.isArray(data?.suggestions)) {
+              setSuggestionsMap((prev) => ({ ...prev, [msg.id]: data.suggestions }))
+            }
+          })
+          .catch(() => {})
+      }
     },
   })
 
@@ -114,6 +142,8 @@ export function ChatInterface({
     const stored: StoredMessage[] = Array.isArray(data.messages) ? data.messages : []
     setMessages(stored)
     setCitationsMap({})
+    setConfidenceMap({})
+    setSuggestionsMap({})
     sessionIdRef.current = id
     setActiveSessionId(id)
   }
@@ -123,6 +153,8 @@ export function ChatInterface({
     setInput('')
     setActiveSessionId(null)
     setCitationsMap({})
+    setConfidenceMap({})
+    setSuggestionsMap({})
     sessionIdRef.current = null
   }
 
@@ -205,6 +237,7 @@ export function ChatInterface({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
+          <PushSetup />
         </div>
 
         {/* Messages */}
@@ -246,6 +279,9 @@ export function ChatInterface({
               isStreaming={isLoading && m.id === messages.at(-1)?.id && m.role === 'assistant'}
               messageId={m.id}
               sessionId={sessionIdRef.current ?? undefined}
+              confidence={m.role === 'assistant' ? (confidenceMap[m.id] ?? null) : null}
+              suggestions={m.role === 'assistant' ? (suggestionsMap[m.id] ?? []) : []}
+              onSuggestion={handleSuggestion}
             />
           ))}
 

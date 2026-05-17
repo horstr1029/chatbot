@@ -22,7 +22,8 @@ export async function streamChat(
   const intent = await detectIntent(userMessage, dept)
 
   let citations: CitationSource[] = []
-  let context = { contextBlock: '', citations: [] as CitationSource[] }
+  let context: { contextBlock: string; citations: CitationSource[]; avgScore: number | null } =
+    { contextBlock: '', citations: [], avgScore: null }
 
   if (intent === 'DOC_QUESTION') {
     const chunks = await retrieve(userMessage, dept)

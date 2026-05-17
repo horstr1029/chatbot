@@ -10,6 +10,7 @@ const updateSchema = z.object({
   systemPrompt: z.string().optional(),
   llmModel: z.string().optional(),
   embedModel: z.string().optional(),
+  slackWebhookUrl: z.string().url().or(z.literal('')).optional().nullable(),
 })
 
 type RouteContext = { params: { id: string } }

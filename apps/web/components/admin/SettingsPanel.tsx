@@ -10,6 +10,7 @@ interface DeptConfig {
   llmModel: string
   embedModel: string
   widgetToken: string | null
+  slackWebhookUrl: string | null
 }
 
 interface SettingsPanelProps {
@@ -81,6 +82,7 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
     systemPrompt: dept.systemPrompt ?? '',
     llmModel: dept.llmModel,
     embedModel: dept.embedModel,
+    slackWebhookUrl: dept.slackWebhookUrl ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -88,7 +90,8 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
   const isDirty =
     form.systemPrompt !== (dept.systemPrompt ?? '') ||
     form.llmModel !== dept.llmModel ||
-    form.embedModel !== dept.embedModel
+    form.embedModel !== dept.embedModel ||
+    form.slackWebhookUrl !== (dept.slackWebhookUrl ?? '')
 
   async function handleSave() {
     setSaving(true)
@@ -223,6 +226,25 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
             {tokenLoading ? 'Generating…' : 'Generate embed token'}
           </button>
         )}
+      </div>
+
+      {/* Slack notifications */}
+      <div className="bg-white border border-border rounded-lg p-5 space-y-3">
+        <div>
+          <p className="text-[13px] font-semibold text-text-primary">Slack notifications</p>
+          <p className="text-[12px] text-text-muted mt-0.5">
+            Workflow approvals and rejections will be posted to this channel webhook.
+          </p>
+        </div>
+        <div>
+          <label className="text-[13px] font-medium text-text-primary mb-1 block">Incoming webhook URL</label>
+          <input
+            value={form.slackWebhookUrl}
+            onChange={(e) => setForm((f) => ({ ...f, slackWebhookUrl: e.target.value }))}
+            className="w-full rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
+            placeholder="https://hooks.slack.com/services/..."
+          />
+        </div>
       </div>
 
       {/* Weekly digest */}

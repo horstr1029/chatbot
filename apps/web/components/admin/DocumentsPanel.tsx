@@ -31,6 +31,8 @@ export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
   const [loading, setLoading] = useState<string | null>(null)
   const [syncStatus, setSyncStatus] = useState<Record<string, 'syncing' | 'done' | 'error'>>({})
   const [adding, setAdding] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadMsg, setUploadMsg] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '',
     sourceType: 'LOCAL' as SourceType,
@@ -66,6 +68,31 @@ export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
     setAdding(false)
     setForm({ name: '', sourceType: 'LOCAL', sourceUrl: '', sourcePath: '', isGlobal: false })
     router.refresh()
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setUploadMsg(null)
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const base64 = (reader.result as string).split(',')[1]
+      const res = await fetch('/api/admin/documents/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, mimeType: file.type, fileBytes: base64 }),
+      })
+      setUploading(false)
+      if (res.ok) {
+        setUploadMsg('Uploaded — ingestion queued.')
+        router.refresh()
+      } else {
+        setUploadMsg('Upload failed. Check file type and try again.')
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   async function handleDelete(sid: string) {
@@ -145,6 +172,28 @@ export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
               })}
             </tbody>
           </table>
+        )}
+      </div>
+
+      {/* Direct PDF upload */}
+      <div className="bg-white border border-border rounded-lg p-5 space-y-3">
+        <div>
+          <p className="text-[13px] font-semibold text-text-primary">Upload a document</p>
+          <p className="text-[12px] text-text-muted mt-0.5">
+            Upload a PDF, Word, or text file directly. It will be parsed and ingested immediately.
+          </p>
+        </div>
+        <label className={`flex items-center gap-2 cursor-pointer w-fit px-4 py-2 rounded-md border border-border text-[13px] font-medium transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : 'text-text-secondary hover:bg-surface-tertiary'}`}>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          {uploading ? 'Uploading…' : 'Choose file'}
+          <input type="file" accept=".pdf,.docx,.doc,.txt,.md" className="hidden" disabled={uploading} onChange={handleUpload} />
+        </label>
+        {uploadMsg && (
+          <p className={`text-[12px] font-medium ${uploadMsg.includes('failed') ? 'text-red-600' : 'text-green-600'}`}>
+            {uploadMsg}
+          </p>
         )}
       </div>
 

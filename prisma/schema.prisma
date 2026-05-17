@@ -9,14 +9,15 @@ datasource db {
 }
 
 model Department {
-  id           String   @id @default(cuid())
-  name         String
-  systemPrompt String?  @db.Text
-  llmModel     String   @default("mistral:7b-instruct")
-  embedModel   String   @default("nomic-embed-text")
-  widgetToken  String?  @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  systemPrompt    String?  @db.Text
+  llmModel        String   @default("mistral:7b-instruct")
+  embedModel      String   @default("nomic-embed-text")
+  widgetToken     String?  @unique
+  slackWebhookUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   members          UserDepartment[]
   documentSources  DocumentSource[]
@@ -66,6 +67,7 @@ model DocumentSource {
   dept       Department @relation(fields: [deptId], references: [id])
   isGlobal   Boolean    @default(false)
   lastSynced DateTime?
+  expiresAt  DateTime?
   createdAt  DateTime   @default(now())
   deletedAt  DateTime?
 }
@@ -140,6 +142,15 @@ model Announcement {
   createdById String
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
 }
 
 model MessageFeedback {

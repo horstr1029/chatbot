@@ -5,6 +5,8 @@ import { deptMiddleware, requireRole } from '@/lib/auth/middleware'
 import { apiResponse, withErrorHandler } from '@/lib/api/response'
 import { n8nClient } from '@/lib/n8n/client'
 import { cancelWorkflowReminder } from '@/lib/queue/reminder.queue'
+import { notifyUser } from '@/lib/push/webpush'
+import { sendSlackNotification } from '@/lib/slack/notify'
 import { Errors } from '@/lib/errors'
 import { z } from 'zod'
 
@@ -36,6 +38,22 @@ export const POST = withErrorHandler(async (req, ctx) => {
   })
 
   await cancelWorkflowReminder(params.id)
+
+  const dept = await prisma.department.findUnique({
+    where: { id: request.deptId },
+    select: { slackWebhookUrl: true, name: true },
+  })
+  await notifyUser(request.requestedById, {
+    title: 'Workflow rejected',
+    body: `${request.description.slice(0, 80)} — ${reason}`,
+    url: '/chat',
+  })
+  if (dept?.slackWebhookUrl) {
+    await sendSlackNotification(
+      dept.slackWebhookUrl,
+      `❌ *Workflow rejected* in ${dept.name}\n>${request.description}\nReason: ${reason}`,
+    )
+  }
 
   if (request.n8nResumeUrl) {
     await n8nClient.resumeExecution(request.n8nResumeUrl, {

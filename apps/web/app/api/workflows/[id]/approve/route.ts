@@ -5,6 +5,8 @@ import { deptMiddleware, requireRole } from '@/lib/auth/middleware'
 import { apiResponse, withErrorHandler } from '@/lib/api/response'
 import { n8nClient } from '@/lib/n8n/client'
 import { cancelWorkflowReminder } from '@/lib/queue/reminder.queue'
+import { notifyUser } from '@/lib/push/webpush'
+import { sendSlackNotification } from '@/lib/slack/notify'
 import { Errors } from '@/lib/errors'
 
 type RouteContext = { params: { id: string } }
@@ -38,6 +40,23 @@ export const POST = withErrorHandler(async (_req, ctx) => {
   })
 
   await cancelWorkflowReminder(params.id)
+
+  // Push + Slack notifications
+  const dept = await prisma.department.findUnique({
+    where: { id: request.deptId },
+    select: { slackWebhookUrl: true, name: true },
+  })
+  await notifyUser(request.requestedById, {
+    title: 'Workflow approved',
+    body: request.description.slice(0, 100),
+    url: '/chat',
+  })
+  if (dept?.slackWebhookUrl) {
+    await sendSlackNotification(
+      dept.slackWebhookUrl,
+      `✅ *Workflow approved* in ${dept.name}\n>${request.description}\nApproved by ${approver?.email ?? 'admin'}`,
+    )
+  }
 
   if (request.n8nResumeUrl) {
     await n8nClient.resumeExecution(request.n8nResumeUrl, {

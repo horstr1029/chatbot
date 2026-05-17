@@ -69,7 +69,8 @@ export async function POST(req: Request) {
   }
 
   // ── RAG / general path ─────────────────────────────────────────
-  let context = { contextBlock: '', citations: [] as { id: string; name: string; url: string; text: string }[] }
+  let context: { contextBlock: string; citations: { id: string; name: string; url: string; text: string }[]; avgScore: number | null } =
+    { contextBlock: '', citations: [], avgScore: null }
   if (intent === 'DOC_QUESTION') {
     const memberships = await prisma.userDepartment.findMany({
       where: { userId: ctx.user_id },
@@ -89,6 +90,7 @@ export async function POST(req: Request) {
       headers: {
         'x-citations': JSON.stringify(context.citations),
         'x-intent': intent,
+        'x-confidence': context.avgScore !== null ? String(context.avgScore) : '',
       },
     })
   } catch {
@@ -97,7 +99,7 @@ export async function POST(req: Request) {
       messages: [{ role: 'user', content: 'repeat exactly: AI model unavailable. Please contact your admin.' }],
       system: 'Repeat the message exactly as given, word for word.',
     })
-    return errorResult.toDataStreamResponse({ headers: { 'x-citations': '[]', 'x-intent': intent } })
+    return errorResult.toDataStreamResponse({ headers: { 'x-citations': '[]', 'x-intent': intent, 'x-confidence': '' } })
   }
 }
 

@@ -11,7 +11,9 @@ interface MessageBubbleProps {
   isStreaming?: boolean
   messageId?: string
   sessionId?: string
-  onSaved?: (messageId: string, saved: boolean) => void
+  confidence?: number | null
+  suggestions?: string[]
+  onSuggestion?: (q: string) => void
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -122,6 +124,14 @@ function FeedbackButtons({ messageId, sessionId }: { messageId: string; sessionI
   )
 }
 
+function ConfidenceDot({ score }: { score: number }) {
+  const color = score > 0.75 ? 'bg-green-400' : score >= 0.5 ? 'bg-amber-400' : 'bg-red-400'
+  const label = score > 0.75 ? 'High confidence' : score >= 0.5 ? 'Medium confidence' : 'Low confidence'
+  return (
+    <span title={`${label} (${Math.round(score * 100)}%)`} className={`inline-block w-2 h-2 rounded-full ${color} mr-1.5 flex-shrink-0`} />
+  )
+}
+
 export function MessageBubble({
   role,
   content,
@@ -130,6 +140,9 @@ export function MessageBubble({
   isStreaming,
   messageId,
   sessionId,
+  confidence,
+  suggestions = [],
+  onSuggestion,
 }: MessageBubbleProps) {
   if (role === 'user') {
     return (
@@ -161,9 +174,23 @@ export function MessageBubble({
         )}
         {!isStreaming && messageId && sessionId && (
           <div className="flex items-center gap-1 mt-1.5">
+            {confidence != null && <ConfidenceDot score={confidence} />}
             <CopyButton text={content} />
             <BookmarkButton messageId={messageId} sessionId={sessionId} content={content} />
             <FeedbackButtons messageId={messageId} sessionId={sessionId} />
+          </div>
+        )}
+        {!isStreaming && suggestions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                onClick={() => onSuggestion?.(s)}
+                className="text-[11px] px-2.5 py-1 rounded-full border border-brand-100 bg-brand-50 text-brand-700 hover:bg-brand-100 transition-colors"
+              >
+                {s}
+              </button>
+            ))}
           </div>
         )}
       </div>
