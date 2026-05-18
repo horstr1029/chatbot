@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import Image from 'next/image'
 import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/db/client'
 import { SelectDeptClient } from './SelectDeptClient'
@@ -25,7 +24,7 @@ export default async function SelectDeptPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface-secondary">
       <div className="bg-white border border-border rounded-lg p-8 w-full max-w-sm">
         <div className="mb-6">
-          <Image src="/logo.jpg" alt="MST Chatbot" width={120} height={60} className="object-contain mb-3" />
+          <img src="/logo.jpg" alt="MST Chatbot" className="h-14 object-contain mb-3" />
           <h1 className="text-xl font-semibold text-text-primary mt-1">Select department</h1>
           <p className="text-[13px] text-text-muted mt-1">
             You belong to multiple departments. Choose one to continue.

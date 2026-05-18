@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import type { ChatSession } from '@prisma/client'
 import { LogoutButton } from '@/components/auth/LogoutButton'
 
@@ -88,7 +87,7 @@ export function Sidebar({
   return (
     <div className="w-[220px] flex-shrink-0 bg-white border-r border-border flex flex-col h-full">
       <div className="px-4 pt-4 pb-2 flex items-center gap-2">
-        <Image src="/logo.jpg" alt="MST Chatbot" width={80} height={40} className="object-contain" priority />
+        <img src="/logo.jpg" alt="MST Chatbot" className="h-10 object-contain" />
       </div>
 
       {/* Dept badge / switcher */}
