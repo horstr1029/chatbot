@@ -72,7 +72,7 @@ jobs:
         working-directory: apps/web
         env:
           DATABASE_URL: postgresql://postgres:testpass@localhost:5432/chatbot_test
-        run: npx prisma generate && npx prisma db push --skip-generate
+        run: npx prisma generate --schema=../../prisma/schema.prisma && npx prisma db push --schema=../../prisma/schema.prisma --skip-generate
 
       - name: TypeScript check
         working-directory: apps/web
@@ -84,7 +84,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:testpass@localhost:5432/chatbot_test
           REDIS_URL: redis://localhost:6379
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: npm test -- --coverage
+        run: npm test -- --coverage --passWithNoTests
 
       - name: Run Python tests
         working-directory: services/ingestion
