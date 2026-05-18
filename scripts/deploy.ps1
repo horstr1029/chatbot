@@ -34,7 +34,7 @@ Write-Host "[1/6] Pulling latest code..."
 Invoke-Remote "git pull origin main"
 
 Write-Host "[2/6] Installing dependencies..."
-Invoke-Remote "cd $AppDir && npm install --omit=dev"
+Invoke-Remote "cd $AppDir && npm install"
 
 Write-Host "[3/6] Running DB migrations..."
 Invoke-Remote "cd $AppDir && DATABASE_URL='$DbUrl' npx prisma db push --schema=../../prisma/schema.prisma --accept-data-loss"

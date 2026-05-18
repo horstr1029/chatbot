@@ -183,7 +183,7 @@ const FEATURES = [
 ]
 
 const FOLDER_STRUCTURE = `Google Drive / SharePoint root
-└── 📁 Company Chatbot Docs
+└── 📁 MST Chatbot Docs
     ├── 📁 Global                  ← visible to ALL departments
     │   ├── 📁 Company Policies
     │   ├── 📁 Health & Safety

@@ -1,6 +1,6 @@
 {
-  "name": "Company Chatbot",
-  "short_name": "Chatbot",
+  "name": "MST Chatbot",
+  "short_name": "MST Chatbot",
   "description": "Department-scoped AI assistant",
   "start_url": "/chat",
   "display": "standalone",

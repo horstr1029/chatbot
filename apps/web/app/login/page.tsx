@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -37,7 +38,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface-secondary">
       <div className="bg-white border border-border rounded-lg p-8 w-full max-w-sm">
         <div className="mb-6">
-          <p className="text-[14px] font-semibold text-text-primary">Company Chatbot</p>
+          <Image src="/logo.jpg" alt="MST Chatbot" width={120} height={60} className="object-contain mb-3" priority />
           <h1 className="text-xl font-semibold text-text-primary mt-1">Sign in</h1>
           <p className="text-[13px] text-text-muted mt-1">
             Access is invite-only. Contact your admin if you need an account.

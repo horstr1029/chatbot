@@ -23,7 +23,7 @@ export async function sendDigestEmail(
   if (!s.host || !s.user) return
 
   const transport = await createTransport()
-  const from = s.from || `"Company Chatbot" <${s.user}>`
+  const from = s.from || `"MST Chatbot" <${s.user}>`
   const displayName = name ?? to
   const { sessionCount, thumbsUp, thumbsDown, questions } = stats
   const total = thumbsUp + thumbsDown
@@ -87,7 +87,7 @@ export async function sendExpiryAlert(
   if (!s.host || !s.user) return
 
   const transport = await createTransport()
-  const from = s.from || `"Company Chatbot" <${s.user}>`
+  const from = s.from || `"MST Chatbot" <${s.user}>`
   const displayName = name ?? to
   const count = sources.length
 
@@ -143,13 +143,13 @@ export async function sendWelcomeEmail(to: string, name: string | null, tempPass
   }
 
   const transport = await createTransport()
-  const from = s.from || `"Company Chatbot" <${s.user}>`
+  const from = s.from || `"MST Chatbot" <${s.user}>`
   const displayName = name ?? to
 
   await transport.sendMail({
     from,
     to,
-    subject: 'Welcome to Company Chatbot — your account is ready',
+    subject: 'Welcome to MST Chatbot — your account is ready',
     html: `
       <!DOCTYPE html>
       <html>

@@ -32,9 +32,34 @@ export const POST = withErrorHandler(async (req: Request) => {
     if (alreadyMember) {
       return NextResponse.json(apiResponse.error('EMAIL_TAKEN', 'This user is already in the department'), { status: 409 })
     }
-    await prisma.userDepartment.create({
-      data: { userId: existing.id, deptId: targetDeptId, role: body.role },
-    })
+
+    // Check if this user has any other active departments — if not, they were fully removed
+    // and need a fresh invite with a new temp password
+    const otherDepts = await prisma.userDepartment.count({ where: { userId: existing.id } })
+    const isReinvite = otherDepts === 0
+
+    if (isReinvite) {
+      const tempPassword = generateTempPassword()
+      const passwordHash = await hashPassword(tempPassword)
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: existing.id },
+          data: { passwordHash, mustChangePassword: true, name: body.name ?? existing.name },
+        }),
+        prisma.userDepartment.create({
+          data: { userId: existing.id, deptId: targetDeptId, role: body.role },
+        }),
+      ])
+      sendWelcomeEmail(existing.email, body.name ?? existing.name, tempPassword).catch((err) => {
+        process.stderr.write(`[email] Failed to send welcome email to ${existing.email}: ${err}\n`)
+      })
+    } else {
+      await prisma.userDepartment.create({
+        data: { userId: existing.id, deptId: targetDeptId, role: body.role },
+      })
+      process.stderr.write(`[users] Existing user ${existing.email} added to dept ${targetDeptId} — no welcome email (user has other active departments)\n`)
+    }
+
     return NextResponse.json(apiResponse.success({ id: existing.id, email: existing.email, name: existing.name, role: body.role, createdAt: existing.createdAt }), { status: 201 })
   }
 

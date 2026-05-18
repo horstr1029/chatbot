@@ -17,6 +17,9 @@ export const POST = withErrorHandler(async () => {
 
   const session = await getSession()
   const to = session.email
+  if (!to) {
+    return apiResponse.error('NO_EMAIL', 'Session has no email address', 400)
+  }
 
   const transport = nodemailer.createTransport({
     host: s.host,
@@ -25,10 +28,12 @@ export const POST = withErrorHandler(async () => {
     auth: { user: s.user, pass: s.pass },
   })
 
+  await transport.verify()
+
   await transport.sendMail({
     from: s.from || s.user,
     to,
-    subject: 'Company Chatbot — SMTP test',
+    subject: 'MST Chatbot — SMTP test',
     text: 'SMTP is configured correctly. This is a test email.',
   })
 

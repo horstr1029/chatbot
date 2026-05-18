@@ -27,6 +27,7 @@ export function withErrorHandler(
     try {
       return await handler(req, ctx)
     } catch (err) {
+      console.error('[withErrorHandler]', err)
       return apiResponse.fromError(err)
     }
   }
