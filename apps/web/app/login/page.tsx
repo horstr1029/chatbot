@@ -37,7 +37,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface-secondary">
       <div className="bg-white border border-border rounded-lg p-8 w-full max-w-sm">
         <div className="mb-6">
-          <img src="/logo.jpg" alt="MST Chatbot" className="h-14 object-contain mb-3" />
+          <img src="/logo.jpg" alt="MST Chatbot" className="h-14 object-contain mb-3 mx-auto block" />
           <h1 className="text-xl font-semibold text-text-primary mt-1">Sign in</h1>
           <p className="text-[13px] text-text-muted mt-1">
             Access is invite-only. Contact your admin if you need an account.
