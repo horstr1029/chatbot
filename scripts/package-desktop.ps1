@@ -12,7 +12,7 @@ $HostPublic = "mstssh.gloworm.org.za"
 $HostLocal  = "192.168.104.35"
 $SshKey     = "$env:USERPROFILE\.ssh\chatbot_deploy"
 $RemoteHost = if ($Local) { $HostLocal } else { $HostPublic }
-$RemoteDir  = "~/company-chatbot/apps/web/.next/standalone/public/downloads"
+$RemoteDir  = "~/company-chatbot/apps/web/public/downloads"
 
 Write-Host ""
 Write-Host "  MST Chatbot — Package Desktop App"
