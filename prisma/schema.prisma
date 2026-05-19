@@ -36,10 +36,12 @@ model User {
   email              String   @unique
   passwordHash       String
   name               String?
-  isSuperAdmin       Boolean  @default(false)
-  mustChangePassword Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  deletedAt          DateTime?
+  isSuperAdmin          Boolean   @default(false)
+  mustChangePassword    Boolean   @default(false)
+  passwordResetToken    String?   @unique
+  passwordResetExpires  DateTime?
+  createdAt             DateTime  @default(now())
+  deletedAt             DateTime?
 
   departments           UserDepartment[]
   workflowRequests      WorkflowRequest[]      @relation("requestedBy")

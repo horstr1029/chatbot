@@ -135,6 +135,46 @@ export async function sendExpiryAlert(
   })
 }
 
+export async function sendPasswordResetEmail(to: string, name: string | null, token: string) {
+  const s = await getSmtpSettings()
+  if (!s.host || !s.user) {
+    process.stderr.write(`[email] SMTP not configured — skipping password reset email to ${to}\n`)
+    return
+  }
+
+  const transport = await createTransport()
+  const from = s.from || `"MST Chatbot" <${s.user}>`
+  const displayName = name ?? to
+  const resetUrl = `${APP_URL}/reset-password/${token}`
+
+  await transport.sendMail({
+    from,
+    to,
+    subject: 'MST Chatbot — password reset request',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family:'DM Sans',Arial,sans-serif;background:#f9fafb;margin:0;padding:32px;">
+        <div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:36px;">
+          <h2 style="margin:0 0 8px;font-size:18px;color:#111827;">Reset your password</h2>
+          <p style="margin:0 0 24px;font-size:14px;color:#4b5563;line-height:1.6;">
+            Hi ${displayName}, we received a request to reset your password. Click the button below — the link expires in 1 hour.
+          </p>
+          <a href="${resetUrl}" style="display:inline-block;padding:10px 20px;background:#111827;color:#ffffff;border-radius:6px;font-size:13px;font-weight:500;text-decoration:none;">Reset password</a>
+          <p style="margin:24px 0 0;font-size:12px;color:#9ca3af;">
+            If you didn't request this, you can safely ignore this email. Your password won't change.
+          </p>
+          <p style="margin:12px 0 0;font-size:11px;color:#d1d5db;word-break:break-all;">
+            ${resetUrl}
+          </p>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Hi ${displayName},\n\nReset your MST Chatbot password here:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.`,
+  })
+}
+
 export async function sendWorkflowReminderEmail(
   admins: { email: string; name: string | null }[],
   deptName: string,
