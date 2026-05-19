@@ -286,3 +286,54 @@ Write tests for:
 - Write `docs/DEPLOYMENT.md` with step-by-step production deployment guide
 
 **Done when:** `docker compose up` starts the full stack. All TASK-18 tests still pass.
+
+---
+
+## TASK-20 — UX Phase 1: Quick wins ✅ IN PROGRESS
+
+**Goal:** Highest-impact, lowest-effort UX improvements.
+
+- [x] Suggested prompts on empty chat state — department-specific starter questions shown before first message
+- [ ] Keyboard shortcuts — `Ctrl+K` new chat, `Ctrl+/` help panel, `Escape` close any open panel
+- [ ] Auto-focus composer on load and after sending a message
+- [ ] Typing indicator — animated dots in assistant bubble while streaming
+
+**Done when:** Empty state shows clickable prompt chips. Keyboard shortcuts work. Composer is always focused.
+
+---
+
+## TASK-21 — UX Phase 2: Dark mode
+
+**Goal:** System-preference-aware dark mode with manual toggle.
+
+- Detect `prefers-color-scheme: dark` on load
+- Add toggle button in user footer (sidebar bottom)
+- Persist preference in `localStorage`
+- All components use CSS variables so a single `.dark` class on `<html>` flips the theme
+- Electron app inherits the web app's theme (no extra work needed)
+
+**Done when:** Toggle switches theme instantly. Preference survives page reload. System dark mode is respected on first load.
+
+---
+
+## TASK-22 — UX Phase 3: In-conversation enhancements
+
+**Goal:** Make active conversations more informative and navigable.
+
+- Message timestamps — show relative time (e.g. "2 min ago") on hover under each bubble
+- In-conversation search — `Ctrl+F` opens a search bar above the composer, highlights matching messages
+- Inline citation preview — clicking a citation chip expands a popover with the exact text snippet (currently only shows chip label)
+
+**Done when:** Hovering a message shows its timestamp. Ctrl+F finds text in the current conversation. Citation chips expand inline.
+
+---
+
+## TASK-23 — UX Phase 4: Power features
+
+**Goal:** Advanced input and navigation features for frequent users.
+
+- Voice input — microphone button in composer uses browser `SpeechRecognition` API; auto-submits on silence
+- @mention documents — typing `@` in composer opens a fuzzy-search dropdown of department document sources; selected doc is pinned into context
+- Pinned/starred chats — star icon on chat history items; starred chats appear in a fixed section at the top of the sidebar
+
+**Done when:** Voice dictation works in Chrome. `@` triggers document picker. Starred chats persist across sessions.

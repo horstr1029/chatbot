@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, type KeyboardEvent, type ChangeEvent } from 'react'
+import { useRef, useEffect, useImperativeHandle, forwardRef, type KeyboardEvent, type ChangeEvent } from 'react'
 
 interface ComposerProps {
   value: string
@@ -10,8 +10,21 @@ interface ComposerProps {
   deptName: string
 }
 
-export function Composer({ value, onChange, onSubmit, isLoading, deptName }: ComposerProps) {
+export interface ComposerHandle {
+  focus: () => void
+}
+
+export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
+  { value, onChange, onSubmit, isLoading, deptName },
+  ref
+) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useImperativeHandle(ref, () => ({ focus: () => textareaRef.current?.focus() }))
+
+  useEffect(() => {
+    textareaRef.current?.focus()
+  }, [])
 
   function autoResize() {
     const el = textareaRef.current
@@ -33,7 +46,7 @@ export function Composer({ value, onChange, onSubmit, isLoading, deptName }: Com
   }
 
   return (
-    <div className="border-t border-border bg-white px-5 py-3.5">
+    <div className="border-t border-border bg-white px-5 py-3.5" onClick={() => textareaRef.current?.focus()}>
       <div className="border border-border rounded-lg bg-white flex items-end gap-2 px-2.5 py-2 focus-within:border-blue-300 transition-colors">
         <textarea
           ref={textareaRef}
@@ -63,4 +76,4 @@ export function Composer({ value, onChange, onSubmit, isLoading, deptName }: Com
       </p>
     </div>
   )
-}
+})

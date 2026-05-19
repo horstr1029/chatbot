@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import type { ChatSession } from '@prisma/client'
 import { Sidebar } from './Sidebar'
 import { MessageBubble, TypingIndicator } from './MessageBubble'
-import { Composer } from './Composer'
+import { Composer, type ComposerHandle } from './Composer'
 import { DocsPanel } from './DocsPanel'
 import { SavedPanel } from './SavedPanel'
 import { WorkflowsPanel } from './WorkflowsPanel'
@@ -70,6 +70,7 @@ export function ChatInterface({
   const [remindersOpen, setRemindersOpen] = useState(false)
   const [crossDeptOpen, setCrossDeptOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const composerRef = useRef<ComposerHandle>(null)
   const pendingCitations = useRef<Citation[]>([])
   const pendingConfidence = useRef<number | null>(null)
   const pendingFormData = useRef<FormData | null>(null)
@@ -163,6 +164,35 @@ export function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        handleNewChat()
+        setTimeout(() => composerRef.current?.focus(), 50)
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault()
+        setHelpOpen((v) => !v)
+      }
+      if (e.key === 'Escape') {
+        setDocsOpen(false)
+        setSavedOpen(false)
+        setWorkflowsOpen(false)
+        setHelpOpen(false)
+        setMeetingBriefOpen(false)
+        setRemindersOpen(false)
+        setCrossDeptOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function handleSelectSession(id: string) {
     const res = await fetch(`/api/chat/sessions/${id}`)
     if (!res.ok) return
@@ -194,10 +224,12 @@ export function ChatInterface({
     if (!input.trim() || isLoading) return
     append({ role: 'user', content: input })
     setInput('')
+    setTimeout(() => composerRef.current?.focus(), 0)
   }
 
   function handleSuggestion(q: string) {
     append({ role: 'user', content: q })
+    setTimeout(() => composerRef.current?.focus(), 0)
   }
 
   function exportChat() {
@@ -364,6 +396,7 @@ export function ChatInterface({
         <AnnouncementBanner deptId={deptId} />
 
         <Composer
+          ref={composerRef}
           value={input}
           onChange={setInput}
           onSubmit={handleSubmit}
