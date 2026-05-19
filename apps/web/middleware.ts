@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const PUBLIC_PREFIXES = ['/login', '/change-password', '/forgot-password', '/reset-password', '/api/auth/', '/api/health', '/_next', '/favicon.ico']
-const PUBLIC_EXTENSIONS = /\.(jpg|jpeg|png|gif|svg|ico|webp|woff|woff2|ttf|eot|mp4|pdf)$/i
+const PUBLIC_EXTENSIONS = /\.(jpg|jpeg|png|gif|svg|ico|webp|woff|woff2|ttf|eot|mp4|pdf|zip)$/i
 
 export function middleware(req: NextRequest) {
   const { pathname, method } = req.nextUrl as unknown as { pathname: string; method: string }

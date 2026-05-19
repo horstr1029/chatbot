@@ -133,7 +133,16 @@ const FEATURES = [
       </svg>
     ),
     title: 'Install as app (PWA)',
-    desc: 'The chatbot can be installed as a standalone app on your phone or desktop. In Chrome, click the install icon in the address bar. On iOS Safari, tap Share → Add to Home Screen.',
+    desc: 'Install the chatbot as a standalone app — no browser chrome, works offline for cached pages. In Chrome or Edge, click the ⊕ install icon in the address bar. On iOS Safari, tap Share → Add to Home Screen.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+    title: 'Windows desktop app',
+    desc: 'Download the Windows desktop app for a native experience — sits in your system tray, opens instantly with a single click, and can launch automatically when you log in to Windows.',
   },
   {
     icon: (
@@ -294,6 +303,21 @@ const TAG_COLOURS: Record<string, string> = {
   Onboarding: 'bg-lime-50 text-lime-600',
 }
 
+const DOWNLOADS = [
+  {
+    label: 'Windows desktop app',
+    desc: 'Standalone app with system tray — runs without a browser.',
+    size: '~110 MB',
+    href: '/downloads/MST-Chatbot-win32-x64.zip',
+    filename: 'MST-Chatbot-win32-x64.zip',
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
+]
+
 type Tab = 'features' | 'folders' | 'workflows'
 
 export function HelpPanel({ open, onClose, deptName }: HelpPanelProps) {
@@ -354,6 +378,33 @@ export function HelpPanel({ open, onClose, deptName }: HelpPanelProps) {
               <p className="text-[12px] text-text-muted">
                 Everything available in the {deptName} chatbot.
               </p>
+
+              {/* Download banner */}
+              <div className="rounded-lg border border-brand-100 bg-brand-50 p-3.5 flex flex-col gap-2">
+                <p className="text-[12px] font-semibold text-brand-700">Get the desktop app</p>
+                {DOWNLOADS.map((d) => (
+                  <a
+                    key={d.href}
+                    href={d.href}
+                    download={d.filename}
+                    className="flex items-center gap-3 bg-white border border-border rounded-md px-3 py-2.5 hover:border-brand-200 hover:bg-brand-50 transition-colors group"
+                  >
+                    <div className="w-7 h-7 rounded-md bg-brand-100 flex items-center justify-center text-brand-600 flex-shrink-0">
+                      {d.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12.5px] font-medium text-text-primary group-hover:text-brand-700 transition-colors">{d.label}</p>
+                      <p className="text-[11px] text-text-muted">{d.desc} <span className="text-text-muted/60">{d.size}</span></p>
+                    </div>
+                    <svg className="w-3.5 h-3.5 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  </a>
+                ))}
+                <p className="text-[11px] text-brand-600/70">
+                  Unzip and run <code className="bg-brand-100 px-1 rounded text-[10.5px]">MST Chatbot.exe</code> — no installer needed.
+                </p>
+              </div>
               {FEATURES.map((f) => (
                 <div key={f.title} className="flex gap-3 p-3 rounded-lg border border-border bg-white">
                   <div className="w-7 h-7 rounded-md bg-brand-50 flex items-center justify-center text-brand-600 flex-shrink-0 mt-0.5">
