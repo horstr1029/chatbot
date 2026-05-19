@@ -1,6 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
 
 interface HelpPanelProps {
   open: boolean
@@ -323,6 +328,27 @@ type Tab = 'features' | 'folders' | 'workflows'
 export function HelpPanel({ open, onClose, deptName }: HelpPanelProps) {
   const [tab, setTab] = useState<Tab>('features')
   const [copied, setCopied] = useState<number | null>(null)
+  const [pwaPrompt, setPwaPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [pwaInstalled, setPwaInstalled] = useState(false)
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault()
+      setPwaPrompt(e as BeforeInstallPromptEvent)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('appinstalled', () => { setPwaInstalled(true); setPwaPrompt(null) })
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler)
+    }
+  }, [])
+
+  async function handlePwaInstall() {
+    if (!pwaPrompt) return
+    await pwaPrompt.prompt()
+    await pwaPrompt.userChoice
+    setPwaPrompt(null)
+  }
 
   async function copyPrompt(i: number, prompt: string) {
     await navigator.clipboard.writeText(prompt)
@@ -410,9 +436,29 @@ export function HelpPanel({ open, onClose, deptName }: HelpPanelProps) {
                   <div className="w-7 h-7 rounded-md bg-brand-50 flex items-center justify-center text-brand-600 flex-shrink-0 mt-0.5">
                     {f.icon}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold text-text-primary mb-0.5">{f.title}</p>
                     <p className="text-[12px] text-text-secondary leading-relaxed">{f.desc}</p>
+                    {f.title === 'Install as app (PWA)' && (
+                      <div className="mt-2">
+                        {pwaInstalled ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                            Installed
+                          </span>
+                        ) : pwaPrompt ? (
+                          <button
+                            onClick={handlePwaInstall}
+                            className="inline-flex items-center gap-1.5 text-[11.5px] font-medium bg-brand-600 text-white px-3 py-1.5 rounded-md hover:bg-brand-700 transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                            Install now
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-text-muted">Look for the ⊕ icon in your browser address bar to install.</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
