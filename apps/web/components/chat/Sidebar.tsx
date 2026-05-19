@@ -22,6 +22,43 @@ interface SidebarProps {
 
 type SessionItem = Pick<ChatSession, 'id' | 'title' | 'updatedAt'>
 
+function SessionRow({ s, active, starred, onSelect, onStar }: {
+  s: SessionItem
+  active: boolean
+  starred: boolean
+  onSelect: () => void
+  onStar: (e: React.MouseEvent) => void
+}) {
+  return (
+    <div className="group relative flex items-center mb-0.5">
+      <button
+        onClick={onSelect}
+        className={`flex items-center gap-2 w-full pl-2.5 pr-7 py-1.5 rounded-md text-[13px] transition-colors ${
+          active ? 'bg-brand-50 text-brand-700 font-medium' : 'text-text-secondary hover:bg-surface-tertiary'
+        }`}
+      >
+        <span className="flex-1 truncate text-left">{s.title ?? 'Untitled'}</span>
+        <span className="text-[11px] text-text-muted flex-shrink-0">
+          {new Date(s.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+        </span>
+      </button>
+      <button
+        onClick={onStar}
+        title={starred ? 'Unstar' : 'Star'}
+        className={`absolute right-1 w-5 h-5 flex items-center justify-center rounded transition-all ${
+          starred
+            ? 'text-amber-400 opacity-100'
+            : 'text-text-muted opacity-0 group-hover:opacity-100 hover:text-amber-400'
+        }`}
+      >
+        <svg className="w-3 h-3" fill={starred ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
 export function Sidebar({
   deptName,
   deptId,
@@ -63,10 +100,27 @@ export function Sidebar({
     }, 300)
   }, [query])
 
+  const [starred, setStarred] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try { return new Set(JSON.parse(localStorage.getItem('starred_sessions') ?? '[]')) } catch { return new Set() }
+  })
+
+  function toggleStar(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setStarred((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      localStorage.setItem('starred_sessions', JSON.stringify(Array.from(next)))
+      return next
+    })
+  }
+
   const initials = userName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
   const roleLabel = userRole === 'DEPT_ADMIN' ? 'Dept Admin' : userRole === 'SUPER_ADMIN' ? 'Super Admin' : 'Member'
   const multiDept = availableDepts.length > 1
   const displayedSessions = searchOpen && query.length >= 2 ? results : sessions
+  const starredSessions = sessions.filter((s) => starred.has(s.id))
+  const unstarredSessions = displayedSessions.filter((s) => !starred.has(s.id))
 
   async function switchDept(id: string) {
     if (id === deptId) return
@@ -166,24 +220,21 @@ export function Sidebar({
 
       {/* History */}
       <div className="flex-1 overflow-y-auto px-2 mt-3">
-        {!searchOpen && displayedSessions.length === 0 && (
+        {!searchOpen && starredSessions.length > 0 && (
+          <>
+            <p className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide px-2 mb-1">Starred</p>
+            {starredSessions.map((s) => (
+              <SessionRow key={s.id} s={s} active={s.id === activeSessionId} starred onSelect={() => handleSelect(s.id)} onStar={(e) => toggleStar(s.id, e)} />
+            ))}
+            <div className="border-t border-border my-2" />
+            <p className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide px-2 mb-1">Recent</p>
+          </>
+        )}
+        {displayedSessions.length === 0 && !searchOpen && (
           <p className="text-[12px] text-text-muted px-2">No conversations yet</p>
         )}
-        {displayedSessions.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => handleSelect(s.id)}
-            className={`flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-[13px] transition-colors mb-0.5 ${
-              s.id === activeSessionId
-                ? 'bg-brand-50 text-brand-700 font-medium'
-                : 'text-text-secondary hover:bg-surface-tertiary'
-            }`}
-          >
-            <span className="flex-1 truncate text-left">{s.title ?? 'Untitled'}</span>
-            <span className="text-[11px] text-text-muted flex-shrink-0">
-              {new Date(s.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-            </span>
-          </button>
+        {(searchOpen ? displayedSessions : unstarredSessions).map((s) => (
+          <SessionRow key={s.id} s={s} active={s.id === activeSessionId} starred={starred.has(s.id)} onSelect={() => handleSelect(s.id)} onStar={(e) => toggleStar(s.id, e)} />
         ))}
       </div>
 

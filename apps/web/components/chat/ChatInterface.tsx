@@ -468,6 +468,7 @@ export function ChatInterface({
           onSubmit={handleSubmit}
           isLoading={isLoading}
           deptName={deptName}
+          deptId={deptId}
         />
       </div>
 
