@@ -52,6 +52,30 @@ services:
       retries: 5
     networks: [chatbot]
 
+  # ── Next.js web app ────────────────────────────────────────────
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks: [chatbot]
+
   # ── Python ingestion service ───────────────────────────────────
   ingestion:
     build:

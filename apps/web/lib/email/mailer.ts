@@ -135,6 +135,48 @@ export async function sendExpiryAlert(
   })
 }
 
+export async function sendWorkflowReminderEmail(
+  admins: { email: string; name: string | null }[],
+  deptName: string,
+  workflowRequestId: string,
+  description: string,
+) {
+  const s = await getSmtpSettings()
+  if (!s.host || !s.user) return
+
+  const transport = await createTransport()
+  const from = s.from || `"MST Chatbot" <${s.user}>`
+  const shortDesc = description.slice(0, 120)
+
+  for (const admin of admins) {
+    await transport.sendMail({
+      from,
+      to: admin.email,
+      subject: `${deptName} — workflow request pending for 48 hours`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family:'DM Sans',Arial,sans-serif;background:#f9fafb;margin:0;padding:32px;">
+          <div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:36px;">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">${deptName}</p>
+            <h2 style="margin:0 0 8px;font-size:18px;color:#111827;">Workflow approval needed</h2>
+            <p style="margin:0 0 20px;font-size:14px;color:#4b5563;line-height:1.6;">
+              Hi ${admin.name ?? admin.email}, a workflow request has been waiting for your approval for more than 48 hours.
+            </p>
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:16px 20px;margin-bottom:24px;">
+              <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#d97706;text-transform:uppercase;letter-spacing:.05em;">Request</p>
+              <p style="margin:0;font-size:13px;color:#111827;">${shortDesc}</p>
+            </div>
+            <a href="${APP_URL}/admin/workflows" style="display:inline-block;padding:10px 20px;background:#111827;color:#ffffff;border-radius:6px;font-size:13px;font-weight:500;text-decoration:none;">Review request</a>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `${deptName} — workflow approval needed\n\nHi ${admin.name ?? admin.email},\n\nA workflow request has been pending for 48+ hours:\n\n"${shortDesc}"\n\nReview it here: ${APP_URL}/admin/workflows`,
+    })
+  }
+}
+
 export async function sendWelcomeEmail(to: string, name: string | null, tempPassword: string) {
   const s = await getSmtpSettings()
   if (!s.host || !s.user) {

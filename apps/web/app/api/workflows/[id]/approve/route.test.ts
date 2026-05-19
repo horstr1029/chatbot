@@ -8,6 +8,7 @@ jest.mock('@/lib/auth/middleware', () => ({
 const mockWorkflowFindUnique = jest.fn()
 const mockWorkflowUpdate = jest.fn()
 const mockUserFindUnique = jest.fn()
+const mockDeptFindUnique = jest.fn()
 const mockTransaction = jest.fn()
 jest.mock('@/lib/db/client', () => ({
   prisma: {
@@ -16,8 +17,17 @@ jest.mock('@/lib/db/client', () => ({
       update: mockWorkflowUpdate,
     },
     user: { findUnique: mockUserFindUnique },
+    department: { findUnique: mockDeptFindUnique },
     $transaction: mockTransaction,
   },
+}))
+
+jest.mock('@/lib/push/webpush', () => ({
+  notifyUser: jest.fn().mockResolvedValue(undefined),
+}))
+
+jest.mock('@/lib/slack/notify', () => ({
+  sendSlackNotification: jest.fn().mockResolvedValue(undefined),
 }))
 
 const mockResumeExecution = jest.fn()
@@ -44,6 +54,9 @@ const pendingRequest = {
   status: 'PENDING',
   n8nResumeUrl: null,
   n8nWorkflowId: 'n8n-1',
+  description: 'Test workflow',
+  requestedById: 'user-2',
+  approvalSteps: [],
 }
 
 beforeEach(() => {
@@ -52,6 +65,7 @@ beforeEach(() => {
     return fn(tx)
   })
   mockUserFindUnique.mockResolvedValue({ email: 'admin@test.com' })
+  mockDeptFindUnique.mockResolvedValue({ slackWebhookUrl: null, name: 'HR' })
 })
 
 afterEach(() => jest.clearAllMocks())

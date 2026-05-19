@@ -2,6 +2,8 @@ import { Queue, Worker } from 'bullmq'
 import { redis } from '@/lib/redis/client'
 import { makeBullMQConnection } from '@/lib/redis/bullmq'
 import { prisma } from '@/lib/db/client'
+import { sendWorkflowReminderEmail } from '@/lib/email/mailer'
+import { logger } from '@/lib/logger'
 
 interface WorkflowReminderJob {
   workflowRequestId: string
@@ -43,22 +45,24 @@ export function startReminderWorker() {
 
       if (!request || request.status !== 'PENDING') return
 
+      const dept = await prisma.department.findUnique({ where: { id: deptId }, select: { name: true } })
       const adminMemberships = await prisma.userDepartment.findMany({
         where: { deptId, role: 'DEPT_ADMIN' },
         select: { user: { select: { email: true, name: true } } },
       })
       const admins = adminMemberships.map((m) => m.user)
 
-      process.stdout.write(
-        JSON.stringify({
-          ts: new Date().toISOString(),
-          level: 'warn',
-          event: 'workflow_reminder',
-          workflowRequestId,
-          deptId,
-          adminEmails: admins.map((a) => a.email),
-          message: `Workflow request ${workflowRequestId} has been pending for 48h`,
-        }) + '\n',
+      logger.warn('workflow_reminder', {
+        workflowRequestId,
+        deptId,
+        adminEmails: admins.map((a) => a.email),
+      })
+
+      await sendWorkflowReminderEmail(
+        admins,
+        dept?.name ?? deptId,
+        workflowRequestId,
+        request.description,
       )
     },
     { connection: makeBullMQConnection() },
