@@ -3,10 +3,16 @@
   "short_name": "MST Chatbot",
   "description": "Department-scoped AI assistant",
   "start_url": "/chat",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "New chat", "url": "/chat", "description": "Start a new chat session" }
   ]
 }
