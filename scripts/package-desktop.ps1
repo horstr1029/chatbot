@@ -36,9 +36,13 @@ Compress-Archive -Path "apps/desktop/dist/MST Chatbot-win32-x64" -DestinationPat
 $sizeMB = [math]::Round((Get-Item $zipPath).Length / 1MB, 1)
 Write-Host "  → $sizeMB MB"
 
-Write-Host "[4/4] Uploading to server..."
-ssh -i $SshKey -o StrictHostKeyChecking=accept-new "${RemoteUser}@${RemoteHost}" "mkdir -p $RemoteDir"
+Write-Host "[4/5] Uploading to server..."
+ssh -i $SshKey -o StrictHostKeyChecking=accept-new "${RemoteUser}@${RemoteHost}" "mkdir -p $RemoteDir && mkdir -p ~/company-chatbot/apps/web/.next/standalone/public/downloads"
 scp -i $SshKey "apps/web/public/downloads/MST-Chatbot-win32-x64.zip" "${RemoteUser}@${RemoteHost}:${RemoteDir}/MST-Chatbot-win32-x64.zip"
+ssh -i $SshKey "${RemoteUser}@${RemoteHost}" "cp ~/company-chatbot/apps/web/public/downloads/MST-Chatbot-win32-x64.zip ~/company-chatbot/apps/web/.next/standalone/public/downloads/MST-Chatbot-win32-x64.zip"
+
+Write-Host "[5/5] Restarting server to pick up new file..."
+ssh -i $SshKey "${RemoteUser}@${RemoteHost}" "pm2 restart chatbot-web --update-env"
 
 Write-Host ""
 Write-Host "Done. Download available at /downloads/MST-Chatbot-win32-x64.zip"
