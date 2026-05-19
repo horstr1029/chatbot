@@ -194,6 +194,69 @@ const FEATURES = [
     title: 'Cross-department requests',
     desc: 'Need something from another department? Click the globe icon (🌐) in the top bar to raise a cross-department request. The target department admin can respond, reassign, or resolve it. Track incoming and outgoing requests in Admin → Requests.',
   },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+      </svg>
+    ),
+    title: 'Voice input',
+    desc: 'Click the microphone button in the composer to dictate your question — no typing needed. The button pulses red while recording and stops automatically on silence. Works in Chrome and Edge.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+      </svg>
+    ),
+    title: '@mention a document source',
+    desc: 'Type @ in the composer to open a picker showing your department\'s document sources. Select one to focus the AI\'s answer on that source. Use arrow keys to navigate, Enter or Tab to insert.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+      </svg>
+    ),
+    title: 'Starred conversations',
+    desc: 'Hover any conversation in the sidebar to reveal a star icon. Starred chats are pinned to a "Starred" section at the top of your history so important conversations are always easy to find.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    ),
+    title: 'Search within a conversation',
+    desc: 'Press Ctrl+F (or Cmd+F) to open an in-conversation search bar. Matching text is highlighted in amber across all messages. Use Enter / Shift+Enter or the arrows to jump between matches. Esc closes it.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    title: 'Message timestamps',
+    desc: 'Hover over any message bubble to see when it was sent — shown as a relative time like "2 min ago" or "yesterday at 3 pm".',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+      </svg>
+    ),
+    title: 'Dark mode',
+    desc: 'Click the moon/sun icon in the sidebar footer to toggle dark mode. Your preference is saved and applied instantly across the whole app. The system preference is respected on first visit.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h2l1 2 3-6 3 8 2-4h3" />
+      </svg>
+    ),
+    title: 'Keyboard shortcuts',
+    desc: 'Ctrl+K — new chat · Ctrl+F — search conversation · Ctrl+/ — toggle this help panel · Esc — close any open panel. All shortcuts work from anywhere in the chat view.',
+  },
 ]
 
 const FOLDER_STRUCTURE = `Google Drive / SharePoint root
