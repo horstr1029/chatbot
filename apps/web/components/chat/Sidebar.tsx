@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ChatSession } from '@prisma/client'
 import { LogoutButton } from '@/components/auth/LogoutButton'
+import { DarkModeToggle } from './DarkModeToggle'
 
 interface DeptOption { id: string; name: string }
 
@@ -195,6 +196,7 @@ export function Sidebar({
           <p className="text-[13px] font-medium text-text-primary truncate">{userName}</p>
           <p className="text-[11px] text-text-muted">{roleLabel}</p>
         </div>
+        <DarkModeToggle />
         <LogoutButton />
       </div>
     </div>

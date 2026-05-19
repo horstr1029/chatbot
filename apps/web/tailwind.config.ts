@@ -12,6 +12,7 @@ const config: Config = {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
       },
       colors: {
+        white: 'var(--color-surface)',
         brand: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -20,18 +21,18 @@ const config: Config = {
           900: '#1e3a5f',
         },
         surface: {
-          DEFAULT: '#ffffff',
-          secondary: '#f9fafb',
-          tertiary: '#f3f4f6',
+          DEFAULT: 'var(--color-surface)',
+          secondary: 'var(--color-surface-secondary)',
+          tertiary: 'var(--color-surface-tertiary)',
         },
         border: {
-          DEFAULT: '#e5e7eb',
-          strong: '#d1d5db',
+          DEFAULT: 'var(--color-border)',
+          strong: 'var(--color-border-strong)',
         },
         text: {
-          primary: '#111827',
-          secondary: '#4b5563',
-          muted: '#9ca3af',
+          primary: 'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+          muted: 'var(--color-text-muted)',
         },
       },
     },
