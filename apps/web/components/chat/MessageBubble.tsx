@@ -14,6 +14,34 @@ interface MessageBubbleProps {
   confidence?: number | null
   suggestions?: string[]
   onSuggestion?: (q: string) => void
+  timestamp?: Date
+  searchQuery?: string
+  isCurrentMatch?: boolean
+}
+
+function relativeTime(date: Date): string {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000)
+  if (diff < 60) return 'just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+  const parts = text.split(regex)
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="bg-amber-200 text-amber-900 rounded-sm px-0.5">{part}</mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  )
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -143,30 +171,45 @@ export function MessageBubble({
   confidence,
   suggestions = [],
   onSuggestion,
+  timestamp,
+  searchQuery = '',
+  isCurrentMatch = false,
 }: MessageBubbleProps) {
   if (role === 'user') {
     return (
-      <div className="flex items-start gap-2.5 max-w-[88%] self-end flex-row-reverse">
+      <div className="group flex items-start gap-2.5 max-w-[88%] self-end flex-row-reverse">
         <div className="w-7 h-7 rounded-full bg-brand-600 text-white text-[11px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
           {initials}
         </div>
-        <div className="bg-brand-600 text-white rounded-xl rounded-br-sm px-3.5 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap">
-          {content}
+        <div>
+          <div className={`bg-brand-600 text-white rounded-xl rounded-br-sm px-3.5 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap transition-shadow ${isCurrentMatch ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}>
+            <HighlightedText text={content} query={searchQuery} />
+          </div>
+          {timestamp && (
+            <p className="text-right text-[10.5px] text-text-muted mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {relativeTime(timestamp)}
+            </p>
+          )}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex items-start gap-2.5 max-w-[88%]">
+    <div className="group flex items-start gap-2.5 max-w-[88%]">
       <div className="w-7 h-7 rounded-full bg-surface-tertiary border border-border flex items-center justify-center text-[11px] font-semibold text-text-secondary flex-shrink-0 mt-0.5">
         AI
       </div>
       <div className="min-w-0">
-        <div className="bg-white border border-border rounded-xl rounded-bl-sm px-3.5 py-2.5 text-[13.5px] leading-relaxed text-text-primary whitespace-pre-wrap">
-          {content}
+        <div className={`bg-white border border-border rounded-xl rounded-bl-sm px-3.5 py-2.5 text-[13.5px] leading-relaxed text-text-primary whitespace-pre-wrap transition-shadow ${isCurrentMatch ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}>
+          <HighlightedText text={content} query={searchQuery} />
           {isStreaming && <span className="inline-block w-0.5 h-3.5 bg-text-muted ml-0.5 animate-pulse" />}
         </div>
+        {timestamp && (
+          <p className="text-[10.5px] text-text-muted mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {relativeTime(timestamp)}
+          </p>
+        )}
         {citations.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {citations.map((c) => <CitationChip key={c.id} citation={c} />)}

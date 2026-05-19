@@ -6,6 +6,7 @@ import type { ChatSession } from '@prisma/client'
 import { Sidebar } from './Sidebar'
 import { MessageBubble, TypingIndicator } from './MessageBubble'
 import { Composer, type ComposerHandle } from './Composer'
+import { ChatSearch } from './ChatSearch'
 import { DocsPanel } from './DocsPanel'
 import { SavedPanel } from './SavedPanel'
 import { WorkflowsPanel } from './WorkflowsPanel'
@@ -69,8 +70,12 @@ export function ChatInterface({
   const [meetingBriefOpen, setMeetingBriefOpen] = useState(false)
   const [remindersOpen, setRemindersOpen] = useState(false)
   const [crossDeptOpen, setCrossDeptOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchMatchIndex, setSearchMatchIndex] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<ComposerHandle>(null)
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const pendingCitations = useRef<Citation[]>([])
   const pendingConfidence = useRef<number | null>(null)
   const pendingFormData = useRef<FormData | null>(null)
@@ -178,7 +183,12 @@ export function ChatInterface({
         e.preventDefault()
         setHelpOpen((v) => !v)
       }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault()
+        openSearch()
+      }
       if (e.key === 'Escape') {
+        if (searchOpen) { closeSearch(); return }
         setDocsOpen(false)
         setSavedOpen(false)
         setWorkflowsOpen(false)
@@ -248,6 +258,47 @@ export function ChatInterface({
 
   const title = messages.find((m) => m.role === 'user')?.content.slice(0, 40) ?? 'New chat'
   const suggestions = SUGGESTED_QUESTIONS(deptName)
+
+  const searchMatchIds = searchQuery.trim()
+    ? messages
+        .filter((m) => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
+        .map((m) => m.id)
+    : []
+
+  const safeMatchIndex = searchMatchIds.length > 0
+    ? ((searchMatchIndex % searchMatchIds.length) + searchMatchIds.length) % searchMatchIds.length
+    : 0
+
+  function openSearch() {
+    setSearchOpen(true)
+    setSearchQuery('')
+    setSearchMatchIndex(0)
+  }
+
+  function closeSearch() {
+    setSearchOpen(false)
+    setSearchQuery('')
+    setSearchMatchIndex(0)
+  }
+
+  function navigateMatch(dir: 1 | -1) {
+    if (searchMatchIds.length === 0) return
+    const next = ((safeMatchIndex + dir) + searchMatchIds.length) % searchMatchIds.length
+    setSearchMatchIndex(next)
+    const id = searchMatchIds[next]
+    messageRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  function handleSearchChange(q: string) {
+    setSearchQuery(q)
+    setSearchMatchIndex(0)
+    if (q.trim()) {
+      const ids = messages
+        .filter((m) => m.content.toLowerCase().includes(q.toLowerCase()))
+        .map((m) => m.id)
+      if (ids[0]) messageRefs.current[ids[0]]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-surface-secondary">
@@ -362,7 +413,7 @@ export function ChatInterface({
           )}
 
           {messages.map((m) => (
-            <div key={m.id}>
+            <div key={m.id} ref={(el) => { messageRefs.current[m.id] = el }}>
               <MessageBubble
                 role={m.role as 'user' | 'assistant'}
                 content={m.content}
@@ -374,6 +425,9 @@ export function ChatInterface({
                 confidence={m.role === 'assistant' ? (confidenceMap[m.id] ?? null) : null}
                 suggestions={m.role === 'assistant' ? (suggestionsMap[m.id] ?? []) : []}
                 onSuggestion={handleSuggestion}
+                timestamp={m.createdAt}
+                searchQuery={searchOpen ? searchQuery : ''}
+                isCurrentMatch={searchOpen && searchMatchIds[safeMatchIndex] === m.id}
               />
               {m.role === 'assistant' && formDataMap[m.id] && !hiddenFormIds.has(m.id) && (
                 <div className="ml-9">
@@ -394,6 +448,18 @@ export function ChatInterface({
         </div>
 
         <AnnouncementBanner deptId={deptId} />
+
+        {searchOpen && (
+          <ChatSearch
+            query={searchQuery}
+            matchCount={searchMatchIds.length}
+            currentMatch={safeMatchIndex}
+            onChange={handleSearchChange}
+            onPrev={() => navigateMatch(-1)}
+            onNext={() => navigateMatch(1)}
+            onClose={closeSearch}
+          />
+        )}
 
         <Composer
           ref={composerRef}
