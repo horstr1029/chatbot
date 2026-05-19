@@ -1,5 +1,59 @@
 # Deployment Guide
 
+## Updating the Electron desktop app
+
+The desktop app is a standalone Electron wrapper that loads the live web app URL. It does **not** auto-update — you build a new zip and upload it to the server. Users re-download and unzip.
+
+### When to update
+- After adding features to the Electron shell itself (tray menu, window behaviour, etc.)
+- The web app updates automatically on every deploy — you don't need to re-package just because the web UI changed
+
+### Steps
+
+```powershell
+# 1. Make your changes in apps/desktop/main.js (or other desktop files)
+
+# 2. Run the package script — builds, zips, and uploads in one step
+.\scripts\package-desktop.ps1
+
+# LAN shortcut (faster upload when in office)
+.\scripts\package-desktop.ps1 -Local
+```
+
+That script does:
+1. Runs `node scripts/generate-icons.js` — regenerates PNG/ICO assets
+2. Runs `electron-packager` — builds `apps/desktop/dist/MST Chatbot-win32-x64/`
+3. Zips the output to `apps/web/public/downloads/MST-Chatbot-win32-x64.zip`
+4. SCPs the zip to `~/company-chatbot/apps/web/.next/standalone/public/downloads/` on the server
+
+The download link in Help → Features tab (`/downloads/MST-Chatbot-win32-x64.zip`) will immediately serve the new version.
+
+### Key files
+| File | Purpose |
+|---|---|
+| `apps/desktop/main.js` | Main process — window, tray, IPC |
+| `apps/desktop/preload.js` | Context bridge (keep minimal) |
+| `apps/desktop/package.json` | Electron version + build script |
+| `apps/desktop/scripts/generate-icons.js` | Generates `resources/tray.png`, `icon.png`, `icon.ico` |
+| `apps/desktop/electron-builder.config.js` | Unused (kept for reference) — packager uses CLI flags |
+| `scripts/package-desktop.ps1` | One-shot build + upload script |
+
+### Changing the app URL
+The default URL is hardcoded as `https://chat.gloworm.org.za` in `apps/desktop/main.js`:
+```js
+const APP_URL = process.env.APP_URL || 'https://chat.gloworm.org.za'
+```
+Change the fallback value and re-run `.\scripts\package-desktop.ps1`.
+
+### Replacing the placeholder icon
+The current icon is a solid blue square. To use the real logo:
+1. Place a square version of the logo as `apps/desktop/resources/icon.png` (256×256)
+2. Run `node apps/desktop/scripts/generate-icons.js` — it will regenerate `tray.png` and `icon.ico` from it
+
+> **Note:** `apps/desktop/resources/*.png` and `*.ico` are gitignored — they're generated locally. The `generate-icons.js` script runs automatically via `postinstall`.
+
+---
+
 ## Overview
 
 The app runs on a Linux server behind a Cloudflare tunnel. The stack is:
