@@ -25,7 +25,7 @@ ssh -i $SshKey `
     -o ServerAliveInterval=15 `
     -o ServerAliveCountMax=20 `
     "$RemoteUser@$RemoteHost" `
-    "bash ~/company-chatbot/scripts/server-deploy.sh"
+    "cd ~/company-chatbot && git pull origin main && bash scripts/server-deploy.sh"
 
 if ($LASTEXITCODE -ne 0) {
   Write-Host ""
