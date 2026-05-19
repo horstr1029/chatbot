@@ -1,14 +1,30 @@
 const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell } = require('electron')
 const path = require('path')
-const Store = require('electron-store')
+const fs = require('fs')
 
 const APP_URL = process.env.APP_URL || 'https://chat.gloworm.org.za'
 
-const store = new Store()
+const storePath = path.join(app.getPath('userData'), 'settings.json')
+
+function readStore() {
+  try { return JSON.parse(fs.readFileSync(storePath, 'utf8')) } catch { return {} }
+}
+
+function writeStore(data) {
+  try { fs.writeFileSync(storePath, JSON.stringify(data), 'utf8') } catch {}
+}
+
+function storeGet(key, defaultValue) {
+  return readStore()[key] ?? defaultValue
+}
+
+function storeSet(key, value) {
+  writeStore({ ...readStore(), [key]: value })
+}
+
 let mainWindow = null
 let tray = null
 
-// Prevent multiple instances
 if (!app.requestSingleInstanceLock()) {
   app.quit()
   process.exit(0)
@@ -23,7 +39,7 @@ app.on('second-instance', () => {
 })
 
 function createWindow() {
-  const bounds = store.get('windowBounds', { width: 440, height: 720 })
+  const bounds = storeGet('windowBounds', { width: 440, height: 720 })
 
   mainWindow = new BrowserWindow({
     width: bounds.width,
@@ -38,24 +54,21 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      // Allow the web app to function normally
       webSecurity: true,
     },
   })
 
   mainWindow.loadURL(APP_URL)
 
-  // Open external links in the default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
     return { action: 'deny' }
   })
 
-  // Save window size/position on close
   mainWindow.on('close', (e) => {
     if (!app.isQuitting) {
       e.preventDefault()
-      store.set('windowBounds', mainWindow.getBounds())
+      storeSet('windowBounds', mainWindow.getBounds())
       mainWindow.hide()
     }
   })
@@ -77,9 +90,9 @@ function createTray() {
     {
       label: 'Launch at login',
       type: 'checkbox',
-      checked: store.get('launchAtLogin', false),
+      checked: storeGet('launchAtLogin', false),
       click: (item) => {
-        store.set('launchAtLogin', item.checked)
+        storeSet('launchAtLogin', item.checked)
         app.setLoginItemSettings({ openAtLogin: item.checked })
       },
     },
@@ -93,7 +106,6 @@ function createTray() {
   tray.setToolTip('MST Chatbot')
   tray.setContextMenu(menu)
 
-  // Single click toggles the window
   tray.on('click', () => {
     if (!mainWindow) return
     if (mainWindow.isVisible() && !mainWindow.isMinimized()) {
@@ -105,20 +117,14 @@ function createTray() {
   })
 }
 
-// IPC handlers
 ipcMain.on('window:minimize', () => mainWindow?.minimize())
 ipcMain.on('window:hide', () => mainWindow?.hide())
 
 app.whenReady().then(() => {
-  // Restore launch-at-login setting
-  const launchAtLogin = store.get('launchAtLogin', false)
-  app.setLoginItemSettings({ openAtLogin: launchAtLogin })
-
+  app.setLoginItemSettings({ openAtLogin: storeGet('launchAtLogin', false) })
   createWindow()
   createTray()
 })
 
 app.on('before-quit', () => { app.isQuitting = true })
-
-// Keep app running when all windows are closed (tray app)
 app.on('window-all-closed', () => {})
