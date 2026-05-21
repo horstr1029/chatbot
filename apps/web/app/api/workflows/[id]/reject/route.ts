@@ -18,7 +18,7 @@ const schema = z.object({ reason: z.string().min(1) })
 export const POST = withErrorHandler(async (req, ctx) => {
   const { params } = ctx as RouteContext
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
 
   const { reason } = schema.parse(await req.json())
 

@@ -12,7 +12,7 @@ type RouteContext = { params: { userId: string } }
 export const GET = withErrorHandler(async (_req, ctx) => {
   const { params } = ctx as RouteContext
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
 
   const record = await getOrCreateBalance(params.userId, authCtx.dept_id)
   return apiResponse.success(record)
@@ -35,7 +35,7 @@ const putSchema = z.object({
 export const PUT = withErrorHandler(async (req, ctx) => {
   const { params } = ctx as RouteContext
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
 
   const body = putSchema.parse(await req.json())
 

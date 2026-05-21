@@ -10,14 +10,14 @@ type Ctx = { params: { id: string } }
 
 const updateSchema = z.object({
   userId: z.string(),
-  role: z.enum(['MEMBER', 'DEPT_ADMIN']).optional(),
+  role: z.enum(['MEMBER', 'MANAGER']).optional(),
   remove: z.boolean().optional(),
 })
 
 export const GET = withErrorHandler(async (_req, ctx) => {
   const { params } = ctx as Ctx
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
   if (authCtx.role !== 'SUPER_ADMIN' && authCtx.dept_id !== params.id) throw Errors.FORBIDDEN()
 
   const members = await prisma.userDepartment.findMany({
@@ -40,7 +40,7 @@ export const GET = withErrorHandler(async (_req, ctx) => {
 export const POST = withErrorHandler(async (req, ctx) => {
   const { params } = ctx as Ctx
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
   if (authCtx.role !== 'SUPER_ADMIN' && authCtx.dept_id !== params.id) throw Errors.FORBIDDEN()
 
   const body = updateSchema.parse(await req.json())

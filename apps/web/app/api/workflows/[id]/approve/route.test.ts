@@ -46,7 +46,7 @@ function makeReq() {
   return new NextRequest('http://localhost/api/workflows/wf-1/approve', { method: 'POST' })
 }
 
-const deptAdminCtx = { user_id: 'user-1', dept_id: 'dept-1', role: 'DEPT_ADMIN' as const, clerk_id: 'clerk-1' }
+const deptAdminCtx = { user_id: 'user-1', dept_id: 'dept-1', role: 'MANAGER' as const, clerk_id: 'clerk-1' }
 
 const pendingRequest = {
   id: 'wf-1',
@@ -100,7 +100,7 @@ describe('POST /api/workflows/[id]/approve', () => {
     expect(body.error).toBeTruthy()
   })
 
-  it('should approve when caller is DEPT_ADMIN of the correct department', async () => {
+  it('should approve when caller is MANAGER of the correct department', async () => {
     mockDeptMiddleware.mockResolvedValue(deptAdminCtx)
     mockRequireRole.mockReturnValue(undefined)
     mockWorkflowFindUnique.mockResolvedValue(pendingRequest)

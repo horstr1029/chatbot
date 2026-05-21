@@ -33,7 +33,7 @@ async function getOwnedTemplate(templateId: string, deptId: string, role: string
 export const PUT = withErrorHandler(async (req, ctx) => {
   const { params } = ctx as Ctx
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
 
   const body = updateSchema.safeParse(await req.json())
   if (!body.success) return apiResponse.error('INVALID_REQUEST', 'Invalid body', 400)
@@ -61,7 +61,7 @@ export const PUT = withErrorHandler(async (req, ctx) => {
 export const DELETE = withErrorHandler(async (_req, ctx) => {
   const { params } = ctx as Ctx
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
 
   await getOwnedTemplate(params.id, authCtx.dept_id, authCtx.role)
 

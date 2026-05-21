@@ -15,7 +15,7 @@ type RouteContext = { params: { id: string } }
 export const POST = withErrorHandler(async (_req, ctx) => {
   const { params } = ctx as RouteContext
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
 
   const request = await prisma.workflowRequest.findUnique({
     where: { id: params.id },
@@ -59,7 +59,7 @@ export const POST = withErrorHandler(async (_req, ctx) => {
       // Notify the next step's dept admins (push + email)
       const nextStep = remainingSteps[0]
       const nextAdmins = await prisma.userDepartment.findMany({
-        where: { deptId: nextStep.approvingDeptId, role: 'DEPT_ADMIN' },
+        where: { deptId: nextStep.approvingDeptId, role: 'MANAGER' },
         include: { user: { select: { name: true, email: true } } },
       })
       const submitter = await prisma.user.findUnique({

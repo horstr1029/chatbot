@@ -10,7 +10,7 @@ type Ctx = { params: { id: string } }
 export const DELETE = withErrorHandler(async (_req, ctx) => {
   const { params } = ctx as Ctx
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
 
   const ann = await prisma.announcement.findUnique({ where: { id: params.id } })
   if (!ann || ann.deptId !== authCtx.dept_id) throw Errors.NOT_FOUND()

@@ -19,7 +19,7 @@ export const GET = withErrorHandler(async (_req, ctx) => {
   const { params } = ctx as RouteContext
   const authCtx = await deptMiddleware()
 
-  // dept_admin can only fetch their own dept; super_admin can fetch any
+  // MANAGER can only fetch their own dept; super_admin can fetch any
   if (authCtx.role !== 'SUPER_ADMIN' && authCtx.dept_id !== params.id) {
     throw Errors.FORBIDDEN()
   }
@@ -35,7 +35,7 @@ export const PUT = withErrorHandler(async (req, ctx) => {
   if (authCtx.role !== 'SUPER_ADMIN' && authCtx.dept_id !== params.id) {
     throw Errors.FORBIDDEN()
   }
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
 
   const body = updateSchema.parse(await req.json())
 

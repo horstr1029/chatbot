@@ -15,7 +15,7 @@ const patchSchema = z.object({
 export const PATCH = withErrorHandler(async (req, ctx) => {
   const { params } = ctx as Ctx
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
   if (authCtx.role !== 'SUPER_ADMIN' && authCtx.dept_id !== params.id) throw Errors.FORBIDDEN()
 
   const body = patchSchema.safeParse(await req.json())
@@ -36,7 +36,7 @@ export const PATCH = withErrorHandler(async (req, ctx) => {
 export const DELETE = withErrorHandler(async (_req, ctx) => {
   const { params } = ctx as Ctx
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
   if (authCtx.role !== 'SUPER_ADMIN' && authCtx.dept_id !== params.id) throw Errors.FORBIDDEN()
 
   const source = await prisma.documentSource.findFirst({

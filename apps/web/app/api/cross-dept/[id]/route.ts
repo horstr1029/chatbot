@@ -17,7 +17,7 @@ const patchSchema = z.object({
 export const PATCH = withErrorHandler(async (req, ctx) => {
   const { params } = ctx as RouteContext
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
 
   const body = patchSchema.parse(await req.json())
 
@@ -58,7 +58,7 @@ export const PATCH = withErrorHandler(async (req, ctx) => {
 export const DELETE = withErrorHandler(async (_req, ctx) => {
   const { params } = ctx as RouteContext
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
 
   const existing = await prisma.crossDeptRequest.findUnique({
     where: { id: params.id },

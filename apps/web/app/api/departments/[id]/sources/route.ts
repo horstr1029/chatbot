@@ -31,7 +31,7 @@ export const GET = withErrorHandler(async (_req, ctx) => {
 export const POST = withErrorHandler(async (req, ctx) => {
   const { params } = ctx as Ctx
   const authCtx = await deptMiddleware()
-  requireRole(authCtx.role, 'DEPT_ADMIN')
+  requireRole(authCtx.role, 'MANAGER')
   if (authCtx.role !== 'SUPER_ADMIN' && authCtx.dept_id !== params.id) throw Errors.FORBIDDEN()
 
   const body = createSchema.parse(await req.json())
