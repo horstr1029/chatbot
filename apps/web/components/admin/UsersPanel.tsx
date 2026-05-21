@@ -10,10 +10,17 @@ const ROLE_LABELS: Record<DeptRole, string> = {
   DEPT_ADMIN: 'Dept Admin',
 }
 
+export interface LeaveTypeEntry {
+  type: string
+  balance: number
+  yearlyAllocation: number
+}
+
 interface LeaveBalance {
   balance: number
   yearlyAllocation: number
   monthlyAccrual: number
+  leaveTypes: LeaveTypeEntry[]
 }
 
 interface UserRow {
@@ -31,7 +38,29 @@ interface UsersPanelProps {
   users: UserRow[]
 }
 
+interface LeaveEdit {
+  yearlyAllocation: string
+  monthlyAccrual: string
+  balance: string
+  leaveTypes: LeaveTypeEntry[]
+  newTypeName: string
+  newTypeAllocation: string
+  newTypeBalance: string
+}
+
 const defaultForm = { name: '', email: '', role: 'MEMBER' as DeptRole }
+
+function parseLeaveTypes(raw: unknown): LeaveTypeEntry[] {
+  if (!Array.isArray(raw)) return []
+  return raw.filter(
+    (e): e is LeaveTypeEntry =>
+      e !== null &&
+      typeof e === 'object' &&
+      typeof (e as LeaveTypeEntry).type === 'string' &&
+      typeof (e as LeaveTypeEntry).balance === 'number' &&
+      typeof (e as LeaveTypeEntry).yearlyAllocation === 'number',
+  )
+}
 
 export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) {
   const router = useRouter()
@@ -40,7 +69,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
   const [expandedLeave, setExpandedLeave] = useState<string | null>(null)
-  const [leaveEdits, setLeaveEdits] = useState<Record<string, { yearlyAllocation: string; monthlyAccrual: string; balance: string }>>({})
+  const [leaveEdits, setLeaveEdits] = useState<Record<string, LeaveEdit>>({})
   const [leaveSaving, setLeaveSaving] = useState<string | null>(null)
 
   const canEdit = currentUserRole === 'SUPER_ADMIN' || currentUserRole === 'DEPT_ADMIN'
@@ -93,15 +122,59 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
       return
     }
     setExpandedLeave(userId)
-    // Always re-initialize from current props so stale state is never shown
     setLeaveEdits((prev) => ({
       ...prev,
       [userId]: {
         yearlyAllocation: String(balance?.yearlyAllocation ?? 15),
         monthlyAccrual: String(balance?.monthlyAccrual ?? 1.25),
         balance: String(balance?.balance ?? 0),
+        leaveTypes: parseLeaveTypes(balance?.leaveTypes),
+        newTypeName: '',
+        newTypeAllocation: '0',
+        newTypeBalance: '0',
       },
     }))
+  }
+
+  function updateLeaveType(userId: string, index: number, field: keyof LeaveTypeEntry, value: string) {
+    setLeaveEdits((prev) => {
+      const edit = prev[userId]
+      if (!edit) return prev
+      const types = edit.leaveTypes.map((t, i) =>
+        i === index ? { ...t, [field]: field === 'type' ? value : Number(value) } : t,
+      )
+      return { ...prev, [userId]: { ...edit, leaveTypes: types } }
+    })
+  }
+
+  function removeLeaveType(userId: string, index: number) {
+    setLeaveEdits((prev) => {
+      const edit = prev[userId]
+      if (!edit) return prev
+      return { ...prev, [userId]: { ...edit, leaveTypes: edit.leaveTypes.filter((_, i) => i !== index) } }
+    })
+  }
+
+  function addLeaveType(userId: string) {
+    setLeaveEdits((prev) => {
+      const edit = prev[userId]
+      if (!edit || !edit.newTypeName.trim()) return prev
+      const newEntry: LeaveTypeEntry = {
+        type: edit.newTypeName.trim(),
+        yearlyAllocation: Number(edit.newTypeAllocation) || 0,
+        balance: Number(edit.newTypeBalance) || 0,
+      }
+      return {
+        ...prev,
+        [userId]: {
+          ...edit,
+          leaveTypes: [...edit.leaveTypes, newEntry],
+          newTypeName: '',
+          newTypeAllocation: '0',
+          newTypeBalance: '0',
+        },
+      }
+    })
   }
 
   async function saveLeave(userId: string) {
@@ -115,6 +188,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
         yearlyAllocation: Number(edit.yearlyAllocation),
         monthlyAccrual: Number(edit.monthlyAccrual),
         balance: Number(edit.balance),
+        leaveTypes: edit.leaveTypes,
       }),
     })
     setLeaveSaving(null)
@@ -122,7 +196,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
   }
 
   async function resetLeave(userId: string) {
-    if (!confirm('Reset this user\'s leave balance to 0?')) return
+    if (!confirm("Reset this user's leave balance to 0?")) return
     setLeaveSaving(`reset-${userId}`)
     await fetch(`/api/admin/leave-balance/${userId}`, {
       method: 'PUT',
@@ -249,73 +323,147 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
                       </button>
                     </td>
                   </tr>
-                  {expandedLeave === u.id && (
+
+                  {expandedLeave === u.id && leaveEdits[u.id] && (
                     <tr key={`${u.id}-leave`} className="bg-surface-secondary">
-                      <td colSpan={6} className="px-4 py-4">
-                        <div className="flex items-end gap-6">
-                          <div>
-                            <p className="text-[11px] font-medium text-text-muted mb-1.5">Yearly allocation (days)</p>
-                            <input
-                              type="number"
-                              min="0"
-                              value={leaveEdits[u.id]?.yearlyAllocation ?? '15'}
-                              onChange={(e) =>
-                                setLeaveEdits((prev) => ({
-                                  ...prev,
-                                  [u.id]: { ...prev[u.id], yearlyAllocation: e.target.value },
-                                }))
-                              }
-                              className="w-24 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
-                            />
+                      <td colSpan={6} className="px-4 py-4 space-y-4">
+
+                        {/* Annual Leave */}
+                        <div>
+                          <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-2">Annual Leave</p>
+                          <div className="flex items-end gap-4 flex-wrap">
+                            <div>
+                              <p className="text-[11px] font-medium text-text-muted mb-1">Yearly allocation (days)</p>
+                              <input
+                                type="number" min="0"
+                                value={leaveEdits[u.id].yearlyAllocation}
+                                onChange={(e) => setLeaveEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], yearlyAllocation: e.target.value } }))}
+                                className="w-24 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-medium text-text-muted mb-1">Monthly accrual (days)</p>
+                              <input
+                                type="number" min="0" step="0.25"
+                                value={leaveEdits[u.id].monthlyAccrual}
+                                onChange={(e) => setLeaveEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], monthlyAccrual: e.target.value } }))}
+                                className="w-24 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-medium text-text-muted mb-1">Current balance (days)</p>
+                              <input
+                                type="number" step="0.5"
+                                value={leaveEdits[u.id].balance}
+                                onChange={(e) => setLeaveEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], balance: e.target.value } }))}
+                                className="w-24 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[11px] font-medium text-text-muted mb-1.5">Monthly accrual (days)</p>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.25"
-                              value={leaveEdits[u.id]?.monthlyAccrual ?? '1.25'}
-                              onChange={(e) =>
-                                setLeaveEdits((prev) => ({
-                                  ...prev,
-                                  [u.id]: { ...prev[u.id], monthlyAccrual: e.target.value },
-                                }))
-                              }
-                              className="w-24 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
-                            />
-                          </div>
-                          <div>
-                            <p className="text-[11px] font-medium text-text-muted mb-1.5">Current balance (days)</p>
-                            <input
-                              type="number"
-                              step="0.5"
-                              value={leaveEdits[u.id]?.balance ?? String(u.leaveBalance?.balance ?? 0)}
-                              onChange={(e) =>
-                                setLeaveEdits((prev) => ({
-                                  ...prev,
-                                  [u.id]: { ...prev[u.id], balance: e.target.value },
-                                }))
-                              }
-                              className="w-24 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
-                            />
-                          </div>
-                          <div className="flex gap-2 ml-auto">
+                        </div>
+
+                        {/* Other leave types */}
+                        <div>
+                          <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-2">Other Leave Types</p>
+
+                          {leaveEdits[u.id].leaveTypes.length > 0 && (
+                            <div className="space-y-2 mb-3">
+                              {leaveEdits[u.id].leaveTypes.map((lt, idx) => (
+                                <div key={idx} className="flex items-center gap-3 flex-wrap">
+                                  <input
+                                    type="text"
+                                    value={lt.type}
+                                    onChange={(e) => updateLeaveType(u.id, idx, 'type', e.target.value)}
+                                    placeholder="Type name"
+                                    className="w-36 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                                  />
+                                  <div>
+                                    <p className="text-[10px] text-text-muted mb-0.5">Allocation</p>
+                                    <input
+                                      type="number" min="0" step="0.5"
+                                      value={lt.yearlyAllocation}
+                                      onChange={(e) => updateLeaveType(u.id, idx, 'yearlyAllocation', e.target.value)}
+                                      className="w-20 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                                    />
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-text-muted mb-0.5">Balance</p>
+                                    <input
+                                      type="number" step="0.5"
+                                      value={lt.balance}
+                                      onChange={(e) => updateLeaveType(u.id, idx, 'balance', e.target.value)}
+                                      className="w-20 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                                    />
+                                  </div>
+                                  <button
+                                    onClick={() => removeLeaveType(u.id, idx)}
+                                    className="text-[12px] text-red-600 hover:bg-red-50 px-2 py-1 rounded transition-colors mt-3"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Add new type row */}
+                          <div className="flex items-end gap-3 flex-wrap">
+                            <div>
+                              <p className="text-[11px] font-medium text-text-muted mb-1">Type name</p>
+                              <input
+                                type="text"
+                                value={leaveEdits[u.id].newTypeName}
+                                onChange={(e) => setLeaveEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], newTypeName: e.target.value } }))}
+                                placeholder="e.g. Sick Leave"
+                                className="w-36 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-medium text-text-muted mb-1">Allocation</p>
+                              <input
+                                type="number" min="0" step="0.5"
+                                value={leaveEdits[u.id].newTypeAllocation}
+                                onChange={(e) => setLeaveEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], newTypeAllocation: e.target.value } }))}
+                                className="w-20 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-medium text-text-muted mb-1">Balance</p>
+                              <input
+                                type="number" step="0.5"
+                                value={leaveEdits[u.id].newTypeBalance}
+                                onChange={(e) => setLeaveEdits((prev) => ({ ...prev, [u.id]: { ...prev[u.id], newTypeBalance: e.target.value } }))}
+                                className="w-20 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                              />
+                            </div>
                             <button
-                              onClick={() => saveLeave(u.id)}
-                              disabled={leaveSaving === u.id}
-                              className="px-3 py-1.5 rounded-md bg-gray-900 text-white text-[12px] font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                              onClick={() => addLeaveType(u.id)}
+                              disabled={!leaveEdits[u.id].newTypeName.trim()}
+                              className="px-3 py-1.5 rounded-md border border-border text-[12px] text-text-secondary hover:bg-surface-tertiary disabled:opacity-40 transition-colors"
                             >
-                              {leaveSaving === u.id ? 'Saving…' : 'Save'}
-                            </button>
-                            <button
-                              onClick={() => resetLeave(u.id)}
-                              disabled={leaveSaving === `reset-${u.id}`}
-                              className="px-3 py-1.5 rounded-md border border-border text-[12px] text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
-                            >
-                              {leaveSaving === `reset-${u.id}` ? '…' : 'Reset balance'}
+                              + Add type
                             </button>
                           </div>
                         </div>
+
+                        {/* Save / Reset */}
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => saveLeave(u.id)}
+                            disabled={leaveSaving === u.id}
+                            className="px-3 py-1.5 rounded-md bg-gray-900 text-white text-[12px] font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                          >
+                            {leaveSaving === u.id ? 'Saving…' : 'Save'}
+                          </button>
+                          <button
+                            onClick={() => resetLeave(u.id)}
+                            disabled={leaveSaving === `reset-${u.id}`}
+                            className="px-3 py-1.5 rounded-md border border-border text-[12px] text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                          >
+                            {leaveSaving === `reset-${u.id}` ? '…' : 'Reset annual balance'}
+                          </button>
+                        </div>
+
                       </td>
                     </tr>
                   )}

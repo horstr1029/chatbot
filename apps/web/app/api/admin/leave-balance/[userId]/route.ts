@@ -18,11 +18,18 @@ export const GET = withErrorHandler(async (_req, ctx) => {
   return apiResponse.success(record)
 })
 
+const leaveTypeEntrySchema = z.object({
+  type: z.string().min(1),
+  balance: z.number(),
+  yearlyAllocation: z.number().min(0),
+})
+
 const putSchema = z.object({
   yearlyAllocation: z.number().int().min(0).optional(),
   monthlyAccrual: z.number().min(0).optional(),
   balance: z.number().optional(),
   resetBalance: z.boolean().optional(),
+  leaveTypes: z.array(leaveTypeEntrySchema).optional(),
 })
 
 export const PUT = withErrorHandler(async (req, ctx) => {
@@ -44,6 +51,7 @@ export const PUT = withErrorHandler(async (req, ctx) => {
       ...(body.monthlyAccrual !== undefined && { monthlyAccrual: body.monthlyAccrual }),
       ...(body.balance !== undefined && { balance: body.balance }),
       ...(body.resetBalance === true && { balance: 0 }),
+      ...(body.leaveTypes !== undefined && { leaveTypes: body.leaveTypes }),
     },
   })
 

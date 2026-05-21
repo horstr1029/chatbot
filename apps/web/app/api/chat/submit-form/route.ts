@@ -90,7 +90,7 @@ export const POST = withErrorHandler(async (req) => {
     await Promise.all([
       ...firstAdmins.map(({ userId }) =>
         notifyUser(userId, {
-          title: `${template.name} submitted`,
+          title: isLeaveTemplate ? 'Leave application pending approval' : `${template.name} pending approval`,
           body: description.slice(0, 80),
           url: '/admin/workflows',
         }),
@@ -101,6 +101,8 @@ export const POST = withErrorHandler(async (req) => {
         requesterName,
         description,
         firstStep.label,
+        template.name,
+        isLeaveTemplate,
       ),
     ])
   } else {
@@ -111,7 +113,7 @@ export const POST = withErrorHandler(async (req) => {
     await Promise.all([
       ...deptAdmins.map(({ userId }) =>
         notifyUser(userId, {
-          title: `${template.name} submitted`,
+          title: isLeaveTemplate ? 'Leave application pending approval' : `${template.name} pending approval`,
           body: description.slice(0, 80),
           url: '/admin/workflows',
         }),
@@ -121,6 +123,9 @@ export const POST = withErrorHandler(async (req) => {
         dept.name,
         requesterName,
         description,
+        undefined,
+        template.name,
+        isLeaveTemplate,
       ),
     ])
   }

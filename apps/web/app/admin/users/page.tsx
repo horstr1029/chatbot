@@ -27,7 +27,7 @@ export default async function UsersPage() {
 
   const leaveBalances = await prisma.leaveBalance.findMany({
     where: { deptId },
-    select: { userId: true, balance: true, yearlyAllocation: true, monthlyAccrual: true },
+    select: { userId: true, balance: true, yearlyAllocation: true, monthlyAccrual: true, leaveTypes: true },
   })
 
   const balanceMap = Object.fromEntries(leaveBalances.map((b) => [b.userId, b]))
@@ -38,7 +38,12 @@ export default async function UsersPage() {
       ...m.user,
       role: m.role,
       createdAt: m.createdAt.toISOString(),
-      leaveBalance: balanceMap[m.user.id] ?? null,
+      leaveBalance: balanceMap[m.user.id]
+        ? {
+            ...balanceMap[m.user.id],
+            leaveTypes: (balanceMap[m.user.id].leaveTypes ?? []) as unknown as import('@/components/admin/UsersPanel').LeaveTypeEntry[],
+          }
+        : null,
     }))
 
   return (

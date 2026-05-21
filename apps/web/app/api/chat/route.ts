@@ -117,10 +117,24 @@ export async function POST(req: Request) {
   // ── Leave balance query path ───────────────────────────────────
   if (intent === 'LEAVE_BALANCE_QUERY') {
     const { balance } = await accrueIfDue(ctx.user_id, ctx.dept_id)
-    const balanceText =
+    const leaveRecord = await prisma.leaveBalance.findUnique({
+      where: { userId_deptId: { userId: ctx.user_id, deptId: ctx.dept_id } },
+      select: { leaveTypes: true },
+    })
+    const otherTypes = Array.isArray(leaveRecord?.leaveTypes) ? leaveRecord.leaveTypes as { type: string; balance: number; yearlyAllocation: number }[] : []
+
+    const annualLine =
       balance < 0
-        ? `You currently have a leave deficit of **${Math.abs(balance).toFixed(1)} day${Math.abs(balance).toFixed(1) !== '1.0' ? 's' : ''}**. You can still apply — it will be deducted from your future allocation.`
-        : `You currently have **${balance.toFixed(1)} day${balance.toFixed(1) !== '1.0' ? 's' : ''}** of leave available. To apply, just say "apply for leave".`
+        ? `- **Annual Leave:** deficit of ${Math.abs(balance).toFixed(1)} day${Math.abs(balance) !== 1 ? 's' : ''} (can still apply — deducted from future allocation)`
+        : `- **Annual Leave:** ${balance.toFixed(1)} day${balance !== 1 ? 's' : ''} available`
+
+    const typeLines = otherTypes.map(
+      (t) => `- **${t.type}:** ${t.balance.toFixed(1)} / ${t.yearlyAllocation.toFixed(1)} day${t.yearlyAllocation !== 1 ? 's' : ''} available`,
+    )
+
+    const allLines = [annualLine, ...typeLines].join('\n')
+    const balanceText = `Here is your current leave balance:\n\n${allLines}\n\nTo apply for leave, just say "apply for leave".`
+
     const result = await streamText({
       model: ollamaProvider()('mistral:7b-instruct'),
       messages: [{ role: 'user', content: balanceText }],

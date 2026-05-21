@@ -221,6 +221,7 @@ export function ChatInterface({
     setSuggestionsMap({})
     setFormDataMap({})
     setHiddenFormIds(new Set())
+    processedStreamDataLengthRef.current = 0
     sessionIdRef.current = id
     setActiveSessionId(id)
   }
@@ -234,6 +235,7 @@ export function ChatInterface({
     setSuggestionsMap({})
     setFormDataMap({})
     setHiddenFormIds(new Set())
+    processedStreamDataLengthRef.current = 0
     sessionIdRef.current = null
   }
 
@@ -447,18 +449,24 @@ export function ChatInterface({
                     template={formDataMap[m.id].template}
                     filled={formDataMap[m.id].filled}
                     onSubmit={async (values) => {
-                      await fetch('/api/chat/submit-form', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ templateId: formDataMap[m.id].template.id, values }),
-                      })
+                      try {
+                        await fetch('/api/chat/submit-form', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ templateId: formDataMap[m.id].template.id, values }),
+                        })
+                      } catch {
+                        // non-blocking
+                      }
+                      const templateName = formDataMap[m.id].template.name
                       setHiddenFormIds((prev) => new Set(Array.from(prev).concat(m.id)))
                       setMessages((prev) => [
                         ...prev,
                         {
-                          id: `form-confirm-${m.id}`,
-                          role: 'assistant',
-                          content: `Your **${formDataMap[m.id].template.name}** has been submitted successfully. Your admin has been notified and will review it shortly.`,
+                          id: `confirm-${m.id}`,
+                          role: 'assistant' as const,
+                          content: `Your **${templateName}** has been submitted successfully. Your admin has been notified and will review it shortly.`,
+                          createdAt: new Date(),
                         },
                       ])
                     }}
