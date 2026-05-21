@@ -48,7 +48,7 @@ function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
       <button
         onClick={onDelete}
         title="Delete"
-        className="absolute right-6 w-5 h-5 flex items-center justify-center rounded transition-all text-text-muted opacity-0 group-hover:opacity-100 hover:text-red-500"
+        className="absolute right-6 w-5 h-5 flex items-center justify-center rounded transition-all text-text-muted opacity-0 group-hover:opacity-100 hover:text-red-600"
       >
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -115,10 +115,13 @@ export function Sidebar({
     }, 300)
   }, [query])
 
-  const [starred, setStarred] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set()
-    try { return new Set(JSON.parse(localStorage.getItem('starred_sessions') ?? '[]')) } catch { return new Set() }
-  })
+  const [starred, setStarred] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('starred_sessions') ?? '[]')
+      if (saved.length > 0) setStarred(new Set(saved))
+    } catch { /* ignore */ }
+  }, [])
 
   function toggleStar(id: string, e: React.MouseEvent) {
     e.stopPropagation()
@@ -255,7 +258,7 @@ export function Sidebar({
                   <button onClick={() => setConfirmClear(false)} className="text-[10px] text-text-muted hover:underline">No</button>
                 </div>
               ) : (
-                <button onClick={() => setConfirmClear(true)} className="text-[10px] text-text-muted hover:text-red-500 transition-colors">Clear all</button>
+                <button onClick={() => setConfirmClear(true)} className="text-[10px] text-text-muted hover:text-red-600 transition-colors">Clear all</button>
               )
             )}
           </div>
