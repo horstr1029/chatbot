@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { LogoutButton } from '@/components/auth/LogoutButton'
+import { AdminHelpPanel } from './AdminHelpPanel'
 
 interface AdminNavProps {
   deptName: string
@@ -14,6 +16,7 @@ interface AdminNavProps {
 export function AdminNav({ deptName, role, pendingCount, incomingRequestsCount }: AdminNavProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const [helpOpen, setHelpOpen] = useState(false)
 
   const links = [
     { href: '/admin', label: 'Dashboard' },
@@ -75,8 +78,16 @@ export function AdminNav({ deptName, role, pendingCount, incomingRequestsCount }
             </Link>
           ))}
         </nav>
+        <button
+          onClick={() => setHelpOpen(true)}
+          title="Admin guide"
+          className="w-7 h-7 flex items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors text-[13px] font-semibold"
+        >
+          ?
+        </button>
         <LogoutButton />
       </div>
     </header>
+    <AdminHelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
   )
 }

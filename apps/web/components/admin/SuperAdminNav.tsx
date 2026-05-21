@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LogoutButton } from '@/components/auth/LogoutButton'
+import { AdminHelpPanel } from './AdminHelpPanel'
 
 const links = [
   { href: '/superadmin', label: 'Overview' },
@@ -15,6 +17,7 @@ const links = [
 
 export function SuperAdminNav() {
   const pathname = usePathname()
+  const [helpOpen, setHelpOpen] = useState(false)
 
   return (
     <header className="bg-white border-b border-border">
@@ -41,8 +44,16 @@ export function SuperAdminNav() {
         >
           ← Chat
         </Link>
+        <button
+          onClick={() => setHelpOpen(true)}
+          title="Admin guide"
+          className="w-7 h-7 flex items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors text-[13px] font-semibold"
+        >
+          ?
+        </button>
         <LogoutButton />
       </div>
     </header>
+    <AdminHelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
   )
 }
