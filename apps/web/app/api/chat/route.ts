@@ -28,10 +28,35 @@ function log(level: 'info' | 'warn' | 'error', event: string, data?: object) {
 }
 
 function ollamaProvider() {
+  const baseURL = (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434') + '/v1'
   return createOpenAI({
-    baseURL: (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434') + '/v1',
+    baseURL,
     apiKey: 'ollama',
+    // Ollama can take 2-3 minutes to reload a large model that was evicted from VRAM
+    fetch: async (url, options) => {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 240_000)
+      try {
+        return await fetch(url, { ...options, signal: controller.signal })
+      } finally {
+        clearTimeout(timer)
+      }
+    },
   })
+}
+
+async function warmChatModel(model: string) {
+  const base = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434'
+  try {
+    await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, messages: [], keep_alive: '10m' }),
+      signal: AbortSignal.timeout(5_000),
+    })
+  } catch {
+    // best-effort — don't block the request
+  }
 }
 
 const bodySchema = z.object({
@@ -193,7 +218,11 @@ export async function POST(req: Request) {
       select: { deptId: true },
     })
     const extraDeptIds = memberships.map((m) => m.deptId).filter((id) => id !== dept.id)
-    const chunks = await retrieve(userMessage, dept, extraDeptIds)
+    // Warm the chat model while embedding runs — embedding can evict it from VRAM
+    const [chunks] = await Promise.all([
+      retrieve(userMessage, dept, extraDeptIds),
+      warmChatModel(dept.llmModel),
+    ])
     context = buildContext(chunks)
   }
 
