@@ -32,10 +32,16 @@ interface UserRow {
   leaveBalance: LeaveBalance | null
 }
 
+interface DeptOption {
+  id: string
+  name: string
+}
+
 interface UsersPanelProps {
   deptId: string
   currentUserRole: UserRole
   users: UserRow[]
+  departments?: DeptOption[]
 }
 
 interface LeaveEdit {
@@ -68,7 +74,7 @@ function parseLeaveTypes(raw: unknown): LeaveTypeEntry[] {
   return parsed.length === 0 ? DEFAULT_LEAVE_TYPES : parsed
 }
 
-export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) {
+export function UsersPanel({ deptId, currentUserRole, users, departments = [] }: UsersPanelProps) {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [form, setForm] = useState(defaultForm)
@@ -77,8 +83,36 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
   const [expandedLeave, setExpandedLeave] = useState<string | null>(null)
   const [leaveEdits, setLeaveEdits] = useState<Record<string, LeaveEdit>>({})
   const [leaveSaving, setLeaveSaving] = useState<string | null>(null)
+  const [editingUserId, setEditingUserId] = useState<string | null>(null)
+  const [editUserName, setEditUserName] = useState('')
+  const [editMoveToDept, setEditMoveToDept] = useState('')
 
   const canEdit = currentUserRole === 'SUPER_ADMIN' || currentUserRole === 'MANAGER'
+  const canMove = currentUserRole === 'SUPER_ADMIN'
+  const otherDepts = departments.filter((d) => d.id !== deptId)
+
+  function startUserEdit(u: UserRow) {
+    setEditingUserId(u.id)
+    setEditUserName(u.name ?? '')
+    setEditMoveToDept('')
+  }
+
+  async function saveUserEdit(u: UserRow) {
+    setLoading(`edit-${u.id}`)
+    const body: Record<string, string> = {}
+    if (editUserName.trim() && editUserName.trim() !== (u.name ?? '')) body.name = editUserName.trim()
+    if (editMoveToDept) { body.moveToDeptId = editMoveToDept; body.fromDeptId = deptId }
+    if (Object.keys(body).length > 0) {
+      await fetch(`/api/users/${u.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    }
+    setLoading(null)
+    setEditingUserId(null)
+    router.refresh()
+  }
 
   async function handleRoleChange(userId: string, role: DeptRole) {
     setLoading(userId)
@@ -319,7 +353,15 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
                     <td className="px-4 py-3 text-[12px] text-text-muted">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
+                      {canEdit && (
+                        <button
+                          onClick={() => editingUserId === u.id ? setEditingUserId(null) : startUserEdit(u)}
+                          className="text-[12px] text-brand-600 hover:bg-brand-50 px-2 py-1 rounded transition-colors font-medium"
+                        >
+                          Edit
+                        </button>
+                      )}
                       <button
                         disabled={loading === `remove-${u.id}`}
                         onClick={() => handleRemove(u.id)}
@@ -329,6 +371,51 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
                       </button>
                     </td>
                   </tr>
+
+                  {editingUserId === u.id && (
+                    <tr key={`${u.id}-edit`} className="bg-brand-50/30">
+                      <td colSpan={6} className="px-4 py-4">
+                        <div className="flex flex-wrap items-end gap-4">
+                          <div>
+                            <p className="text-[12px] font-medium text-text-primary mb-1">Name</p>
+                            <input
+                              value={editUserName}
+                              onChange={(e) => setEditUserName(e.target.value)}
+                              className="w-48 rounded-md border border-border px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
+                              placeholder="Full name"
+                            />
+                          </div>
+                          {canMove && otherDepts.length > 0 && (
+                            <div>
+                              <p className="text-[12px] font-medium text-text-primary mb-1">Move to department</p>
+                              <select
+                                value={editMoveToDept}
+                                onChange={(e) => setEditMoveToDept(e.target.value)}
+                                className="rounded-md border border-border px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                              >
+                                <option value="">— keep current —</option>
+                                {otherDepts.map((d) => (
+                                  <option key={d.id} value={d.id}>{d.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              disabled={loading === `edit-${u.id}`}
+                              onClick={() => saveUserEdit(u)}
+                              className="px-3 py-1.5 rounded-md bg-gray-900 text-white text-[12px] font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                            >
+                              {loading === `edit-${u.id}` ? 'Saving…' : 'Save'}
+                            </button>
+                            <button onClick={() => setEditingUserId(null)} className="px-3 py-1.5 text-[12px] text-text-secondary hover:text-text-primary">
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
 
                   {expandedLeave === u.id && leaveEdits[u.id] && (
                     <tr key={`${u.id}-leave`} className="bg-surface-secondary">

@@ -39,6 +39,7 @@ export function ManagersPanel({ managers, departments }: ManagersPanelProps) {
 
   // Edit form state
   const [editDepts, setEditDepts] = useState<string[]>([])
+  const [editName, setEditName] = useState('')
 
   function toggleDept(id: string, current: string[], setter: (v: string[]) => void) {
     setter(current.includes(id) ? current.filter((d) => d !== id) : [...current, id])
@@ -61,15 +62,23 @@ export function ManagersPanel({ managers, departments }: ManagersPanelProps) {
   function startEdit(m: ManagerRow) {
     setEditingId(m.id)
     setEditDepts(m.departments.map((d) => d.deptId))
+    setEditName(m.name ?? '')
   }
 
   async function handleUpdate(id: string) {
     setLoading(`edit-${id}`)
-    await fetch(`/api/managers/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deptIds: editDepts }),
-    })
+    await Promise.all([
+      fetch(`/api/managers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deptIds: editDepts }),
+      }),
+      editName.trim() && fetch(`/api/managers/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName.trim() }),
+      }),
+    ])
     setLoading(null)
     setEditingId(null)
     router.refresh()
@@ -130,8 +139,17 @@ export function ManagersPanel({ managers, departments }: ManagersPanelProps) {
                   </tr>
                   {editingId === m.id && (
                     <tr key={`${m.id}-edit`} className="bg-brand-50/30">
-                      <td colSpan={4} className="px-4 py-4">
-                        <p className="text-[12px] font-medium text-text-primary mb-2">Edit department assignments</p>
+                      <td colSpan={4} className="px-4 py-4 space-y-3">
+                        <div>
+                          <p className="text-[12px] font-medium text-text-primary mb-1.5">Name</p>
+                          <input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="w-64 rounded-md border border-border px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
+                            placeholder="Full name"
+                          />
+                        </div>
+                        <p className="text-[12px] font-medium text-text-primary">Department assignments</p>
                         <div className="flex flex-wrap gap-2 mb-3">
                           {departments.map((d) => (
                             <button

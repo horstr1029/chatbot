@@ -11,6 +11,26 @@ const updateSchema = z.object({
   deptIds: z.array(z.string()).min(1, 'Assign at least one department'),
 })
 
+const patchSchema = z.object({
+  name: z.string().min(1),
+})
+
+// PATCH — update a manager's name
+export const PATCH = withErrorHandler(async (req, ctx) => {
+  const { params } = ctx as RouteContext
+  const authCtx = await deptMiddleware()
+  requireRole(authCtx.role, 'SUPER_ADMIN')
+
+  const { name } = patchSchema.parse(await req.json())
+
+  await prisma.user.update({
+    where: { id: params.id },
+    data: { name },
+  })
+
+  return apiResponse.success({ updated: true })
+})
+
 // PUT — update a manager's department assignments
 export const PUT = withErrorHandler(async (req, ctx) => {
   const { params } = ctx as RouteContext

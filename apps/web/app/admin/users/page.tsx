@@ -10,6 +10,11 @@ export default async function UsersPage() {
   const deptId = session.deptId
   if (!deptId) redirect('/chat')
 
+  const allDepts = await prisma.department.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
+
   const members = await prisma.userDepartment.findMany({
     where: { deptId },
     orderBy: { createdAt: 'asc' },
@@ -54,7 +59,7 @@ export default async function UsersPage() {
           Manage users and roles in your department.
         </p>
       </div>
-      <UsersPanel deptId={deptId} currentUserRole={session.role} users={users} />
+      <UsersPanel deptId={deptId} currentUserRole={session.role} users={users} departments={allDepts} />
     </div>
   )
 }
