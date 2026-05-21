@@ -87,7 +87,15 @@ export async function POST(req: Request) {
 
   log('info', 'chat_request', { user_id: ctx.user_id, dept_id: ctx.dept_id, model: dept.llmModel })
 
-  const intent = await detectIntent(userMessage, dept)
+  let intent: Awaited<ReturnType<typeof detectIntent>>
+  try {
+    intent = await detectIntent(userMessage, dept)
+  } catch (err) {
+    log('error', 'intent_failed', { error: err instanceof Error ? err.message : String(err) })
+    intent = 'GENERAL_CHAT'
+  }
+
+  log('info', 'intent_detected', { intent })
 
   // ── Workflow request path ──────────────────────────────────────
   if (intent === 'WORKFLOW_REQUEST') {
@@ -243,7 +251,8 @@ export async function POST(req: Request) {
         'x-confidence': context.avgScore !== null ? String(context.avgScore) : '',
       },
     })
-  } catch {
+  } catch (err) {
+    log('error', 'streamtext_failed', { intent, error: err instanceof Error ? err.message : String(err) })
     const errorResult = await streamText({
       model: ollamaProvider()(dept.llmModel),
       messages: [{ role: 'user', content: 'repeat exactly: AI model unavailable. Please contact your admin.' }],
