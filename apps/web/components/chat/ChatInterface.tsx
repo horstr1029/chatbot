@@ -78,6 +78,8 @@ export function ChatInterface({
   const [remindersOpen, setRemindersOpen] = useState(false)
   const [crossDeptOpen, setCrossDeptOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
+  const moreMenuRef = useRef<HTMLDivElement>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchMatchIndex, setSearchMatchIndex] = useState(0)
@@ -216,6 +218,16 @@ export function ChatInterface({
     return () => window.removeEventListener('keydown', onKeyDown)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setMoreMenuOpen(false)
+      }
+    }
+    if (moreMenuOpen) document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [moreMenuOpen])
 
   async function handleSelectSession(id: string) {
     const res = await fetch(`/api/chat/sessions/${id}`)
@@ -369,6 +381,7 @@ export function ChatInterface({
           <h1 className="flex-1 text-[14px] font-semibold text-text-primary truncate">
             {messages.length > 0 ? title : 'New conversation'}
           </h1>
+          {/* Desktop-only buttons */}
           {messages.length > 0 && (
             <button onClick={exportChat} title="Export conversation" className="hidden sm:flex w-7 h-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -386,52 +399,30 @@ export function ChatInterface({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </button>
-          <button
-            onClick={() => setMeetingBriefOpen(true)}
-            title="Meeting prep brief"
-            className="hidden sm:flex w-7 h-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors"
-          >
+          <button onClick={() => setMeetingBriefOpen(true)} title="Meeting prep brief" className="hidden sm:flex w-7 h-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </button>
-          <button
-            onClick={() => setRemindersOpen(true)}
-            title="Reminders"
-            className="hidden sm:flex w-7 h-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors"
-          >
+          <button onClick={() => setRemindersOpen(true)} title="Reminders" className="hidden sm:flex w-7 h-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
           </button>
-          <button
-            onClick={() => setCrossDeptOpen(true)}
-            title="Send request to another department"
-            className="hidden sm:flex w-7 h-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors"
-          >
+          <button onClick={() => setCrossDeptOpen(true)} title="Send request to another department" className="hidden sm:flex w-7 h-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
           {userRole === 'MANAGER' && (
-            <a
-              href="/admin"
-              className="hidden sm:inline-flex text-[11px] font-medium px-2 py-1 rounded bg-brand-50 text-brand-600 border border-brand-100 hover:bg-brand-100 transition-colors"
-            >
+            <a href="/admin" className="hidden sm:inline-flex text-[11px] font-medium px-2 py-1 rounded bg-brand-50 text-brand-600 border border-brand-100 hover:bg-brand-100 transition-colors">
               Admin
             </a>
           )}
-          <button
-            onClick={() => setDocsOpen(true)}
-            className="text-[11px] font-medium px-2 py-1 rounded bg-surface-tertiary text-text-muted hover:bg-brand-50 hover:text-brand-600 transition-colors whitespace-nowrap"
-          >
-            <span className="hidden sm:inline">{deptName} </span>docs
+          <button onClick={() => setDocsOpen(true)} className="hidden sm:inline-flex text-[11px] font-medium px-2 py-1 rounded bg-surface-tertiary text-text-muted hover:bg-brand-50 hover:text-brand-600 transition-colors whitespace-nowrap">
+            {deptName} docs
           </button>
-          <button
-            onClick={() => setHelpOpen(true)}
-            title="Help & Guide"
-            className="w-7 h-7 flex items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors flex-shrink-0"
-          >
+          <button onClick={() => setHelpOpen(true)} title="Help & Guide" className="hidden sm:flex w-7 h-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-surface-secondary hover:text-text-secondary transition-colors flex-shrink-0">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -439,6 +430,65 @@ export function ChatInterface({
           <div className="hidden sm:flex items-center gap-1.5">
             <PwaInstall />
             <PushSetup />
+          </div>
+
+          {/* Mobile-only more menu */}
+          <div ref={moreMenuRef} className="relative sm:hidden flex-shrink-0">
+            <button
+              onClick={() => setMoreMenuOpen((v) => !v)}
+              className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${moreMenuOpen ? 'bg-brand-50 border-brand-200 text-brand-600' : 'border-border text-text-muted hover:bg-surface-secondary'}`}
+              title="More options"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            {moreMenuOpen && (
+              <div className="absolute right-0 top-9 w-52 bg-white border border-border rounded-lg shadow-lg z-50 py-1">
+                <button onClick={() => { setDocsOpen(true); setMoreMenuOpen(false) }} className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-text-secondary hover:bg-surface-secondary transition-colors">
+                  <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  {deptName} docs
+                </button>
+                <button onClick={() => { setSavedOpen(true); setMoreMenuOpen(false) }} className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-text-secondary hover:bg-surface-secondary transition-colors">
+                  <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                  Saved answers
+                </button>
+                <button onClick={() => { setWorkflowsOpen(true); setMoreMenuOpen(false) }} className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-text-secondary hover:bg-surface-secondary transition-colors">
+                  <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  My workflows
+                </button>
+                <button onClick={() => { setMeetingBriefOpen(true); setMoreMenuOpen(false) }} className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-text-secondary hover:bg-surface-secondary transition-colors">
+                  <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  Meeting brief
+                </button>
+                <button onClick={() => { setRemindersOpen(true); setMoreMenuOpen(false) }} className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-text-secondary hover:bg-surface-secondary transition-colors">
+                  <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                  Reminders
+                </button>
+                <button onClick={() => { setCrossDeptOpen(true); setMoreMenuOpen(false) }} className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-text-secondary hover:bg-surface-secondary transition-colors">
+                  <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Cross-dept request
+                </button>
+                {messages.length > 0 && (
+                  <button onClick={() => { exportChat(); setMoreMenuOpen(false) }} className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-text-secondary hover:bg-surface-secondary transition-colors">
+                    <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Export chat
+                  </button>
+                )}
+                {userRole === 'MANAGER' && (
+                  <a href="/admin" className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-brand-600 hover:bg-brand-50 transition-colors">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    Admin panel
+                  </a>
+                )}
+                <div className="border-t border-border mt-1 pt-1 px-4 py-2">
+                  <button onClick={() => { setHelpOpen(true); setMoreMenuOpen(false) }} className="flex items-center gap-3 w-full text-[13px] text-text-secondary hover:text-text-primary transition-colors">
+                    <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Help & Guide
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
