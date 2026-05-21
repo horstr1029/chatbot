@@ -18,7 +18,7 @@ const putSchema = z.object({
 
 export const GET = withErrorHandler(async () => {
   const ctx = await deptMiddleware()
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const dept = await prisma.department.findUnique({
     where: { id: ctx.dept_id },
@@ -33,7 +33,7 @@ export const GET = withErrorHandler(async () => {
 
 export const PUT = withErrorHandler(async (req) => {
   const ctx = await deptMiddleware()
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const body = putSchema.parse(await req.json())
 

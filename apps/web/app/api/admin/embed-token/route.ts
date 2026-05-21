@@ -10,7 +10,7 @@ export async function POST() {
   } catch {
     return apiResponse.error('UNAUTHORIZED', 'Unauthorized', 401)
   }
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const token = randomBytes(24).toString('hex')
   const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days
@@ -30,7 +30,7 @@ export async function DELETE() {
   } catch {
     return apiResponse.error('UNAUTHORIZED', 'Unauthorized', 401)
   }
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   await prisma.department.update({
     where: { id: ctx.dept_id },

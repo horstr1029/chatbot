@@ -145,7 +145,7 @@ export function Sidebar({
   }
 
   const initials = userName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
-  const roleLabel = userRole === 'DEPT_ADMIN' ? 'Dept Admin' : userRole === 'SUPER_ADMIN' ? 'Super Admin' : 'Member'
+  const roleLabel = userRole === 'MANAGER' ? 'Manager' : userRole === 'SUPER_ADMIN' ? 'Super Admin' : 'Member'
   const multiDept = availableDepts.length > 1
   const displayedSessions = searchOpen && query.length >= 2 ? results : sessions
   const starredSessions = sessions.filter((s) => starred.has(s.id))

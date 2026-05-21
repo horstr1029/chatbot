@@ -14,7 +14,7 @@ const createSchema = z.object({
 export const GET = withErrorHandler(async () => {
   const ctx = await deptMiddleware()
 
-  // SUPER_ADMIN gets full metadata; DEPT_ADMIN gets a slim list for selectors
+  // SUPER_ADMIN gets full metadata; MANAGER gets a slim list for selectors
   if (ctx.role === 'SUPER_ADMIN') {
     const departments = await prisma.department.findMany({
       orderBy: { name: 'asc' },
@@ -23,7 +23,7 @@ export const GET = withErrorHandler(async () => {
     return apiResponse.success(departments)
   }
 
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const departments = await prisma.department.findMany({
     orderBy: { name: 'asc' },
@@ -51,8 +51,8 @@ export const POST = withErrorHandler(async (req) => {
     })
     await tx.userDepartment.upsert({
       where: { userId_deptId: { userId: body.managerId, deptId: created.id } },
-      create: { userId: body.managerId, deptId: created.id, role: 'DEPT_ADMIN' },
-      update: { role: 'DEPT_ADMIN' },
+      create: { userId: body.managerId, deptId: created.id, role: 'MANAGER' },
+      update: { role: 'MANAGER' },
     })
     return created
   })

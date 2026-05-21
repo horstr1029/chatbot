@@ -7,7 +7,7 @@ import type { UserRole } from '@/lib/auth/types'
 
 const ROLE_LABELS: Record<DeptRole, string> = {
   MEMBER: 'Member',
-  DEPT_ADMIN: 'Dept Admin',
+  MANAGER: 'Dept Admin',
 }
 
 export interface LeaveTypeEntry {
@@ -78,7 +78,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
   const [leaveEdits, setLeaveEdits] = useState<Record<string, LeaveEdit>>({})
   const [leaveSaving, setLeaveSaving] = useState<string | null>(null)
 
-  const canEdit = currentUserRole === 'SUPER_ADMIN' || currentUserRole === 'DEPT_ADMIN'
+  const canEdit = currentUserRole === 'SUPER_ADMIN' || currentUserRole === 'MANAGER'
 
   async function handleRoleChange(userId: string, role: DeptRole) {
     setLoading(userId)
@@ -248,7 +248,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
                 className="w-full rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600"
               >
                 <option value="MEMBER">Member</option>
-                <option value="DEPT_ADMIN">Dept Admin</option>
+                <option value="MANAGER">Dept Admin</option>
               </select>
             </div>
             <div className="col-span-2 flex items-center gap-3">
@@ -292,7 +292,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
                           className="rounded border border-border px-2 py-1 text-[12px] text-text-secondary focus:outline-none focus:ring-2 focus:ring-brand-600 disabled:opacity-50"
                         >
                           <option value="MEMBER">Member</option>
-                          <option value="DEPT_ADMIN">Dept Admin</option>
+                          <option value="MANAGER">Dept Admin</option>
                         </select>
                       ) : (
                         <span className="text-[12px] text-text-secondary">{ROLE_LABELS[u.role]}</span>

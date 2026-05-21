@@ -57,7 +57,7 @@ export function startExpiryWorker() {
         if (!dept) continue
 
         const adminRows = await prisma.userDepartment.findMany({
-          where: { deptId, role: 'DEPT_ADMIN' },
+          where: { deptId, role: 'MANAGER' },
           select: { user: { select: { email: true, name: true } } },
         })
 

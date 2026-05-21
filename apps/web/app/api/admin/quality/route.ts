@@ -9,7 +9,7 @@ export async function GET() {
   } catch {
     return apiResponse.error('UNAUTHORIZED', 'Unauthorized', 401)
   }
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 

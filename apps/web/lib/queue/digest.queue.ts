@@ -59,7 +59,7 @@ export function startDigestWorker() {
         }
 
         const adminRows = await prisma.userDepartment.findMany({
-          where: { deptId: dept.id, role: 'DEPT_ADMIN' },
+          where: { deptId: dept.id, role: 'MANAGER' },
           select: { user: { select: { email: true, name: true } } },
         })
 

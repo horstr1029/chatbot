@@ -21,7 +21,7 @@ const createSchema = z.object({
 
 export const GET = withErrorHandler(async () => {
   const ctx = await deptMiddleware()
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const templates = await prisma.formTemplate.findMany({
     where: { deptId: ctx.dept_id, active: true },
@@ -42,7 +42,7 @@ export const GET = withErrorHandler(async () => {
 
 export const POST = withErrorHandler(async (req) => {
   const ctx = await deptMiddleware()
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const body = createSchema.safeParse(await req.json())
   if (!body.success) return apiResponse.error('INVALID_REQUEST', 'Invalid body', 400)

@@ -7,7 +7,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await getSession()
   if (!session.isLoggedIn) redirect('/login')
 
-  if (!session.deptId || (session.role !== 'DEPT_ADMIN' && session.role !== 'SUPER_ADMIN')) {
+  if (!session.deptId || (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN')) {
     redirect('/chat')
   }
 

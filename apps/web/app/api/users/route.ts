@@ -10,13 +10,13 @@ import { z } from 'zod'
 const CreateUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1).optional(),
-  role: z.enum(['MEMBER', 'DEPT_ADMIN']).default('MEMBER'),
+  role: z.enum(['MEMBER', 'MANAGER']).default('MEMBER'),
   deptId: z.string().optional(),
 })
 
 export const POST = withErrorHandler(async (req: Request) => {
   const ctx = await deptMiddleware()
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const body = CreateUserSchema.parse(await req.json())
   const targetDeptId = ctx.role === 'SUPER_ADMIN' && body.deptId ? body.deptId : ctx.dept_id

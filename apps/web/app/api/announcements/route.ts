@@ -21,7 +21,7 @@ export const GET = withErrorHandler(async () => {
 
 export const POST = withErrorHandler(async (req) => {
   const ctx = await deptMiddleware()
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const { content } = createSchema.parse(await req.json())
 

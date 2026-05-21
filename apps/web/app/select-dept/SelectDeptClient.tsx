@@ -33,7 +33,7 @@ export function SelectDeptClient({ depts }: { depts: Dept[] }) {
             {d.name}
           </p>
           <p className="text-[11px] text-text-muted mt-0.5">
-            {d.role === 'DEPT_ADMIN' ? 'Dept Admin' : 'Member'}
+            {d.role === 'MANAGER' ? 'Dept Admin' : 'Member'}
           </p>
         </button>
       ))}

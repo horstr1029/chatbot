@@ -84,7 +84,7 @@ export const POST = withErrorHandler(async (req) => {
 
     const firstStep = chain[0]
     const firstAdmins = await prisma.userDepartment.findMany({
-      where: { deptId: firstStep.deptId, role: 'DEPT_ADMIN' },
+      where: { deptId: firstStep.deptId, role: 'MANAGER' },
       include: { user: { select: { name: true, email: true } } },
     })
     await Promise.all([
@@ -107,7 +107,7 @@ export const POST = withErrorHandler(async (req) => {
     ])
   } else {
     const deptAdmins = await prisma.userDepartment.findMany({
-      where: { deptId: ctx.dept_id, role: 'DEPT_ADMIN' },
+      where: { deptId: ctx.dept_id, role: 'MANAGER' },
       include: { user: { select: { name: true, email: true } } },
     })
     await Promise.all([

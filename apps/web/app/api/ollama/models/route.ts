@@ -15,7 +15,7 @@ interface OllamaTagsResponse {
 
 export const GET = withErrorHandler(async () => {
   const ctx = await deptMiddleware()
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const ollamaUrl = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434'
 

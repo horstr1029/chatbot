@@ -9,7 +9,7 @@ export default async function CrossDeptPage() {
   const deptId = session.deptId
   if (!deptId) redirect('/chat')
 
-  if (session.role !== 'DEPT_ADMIN' && session.role !== 'SUPER_ADMIN') {
+  if (session.role !== 'MANAGER' && session.role !== 'SUPER_ADMIN') {
     redirect('/chat')
   }
 

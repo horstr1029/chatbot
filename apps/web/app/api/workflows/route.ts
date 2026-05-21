@@ -6,7 +6,7 @@ import { apiResponse, withErrorHandler } from '@/lib/api/response'
 
 export const GET = withErrorHandler(async () => {
   const ctx = await deptMiddleware()
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const requests = await prisma.workflowRequest.findMany({
     where: { deptId: ctx.dept_id },

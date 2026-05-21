@@ -73,7 +73,7 @@ export const POST = withErrorHandler(async (req) => {
 
   // Notify target dept admins
   const targetAdmins = await prisma.userDepartment.findMany({
-    where: { deptId: body.toDeptId, role: 'DEPT_ADMIN' },
+    where: { deptId: body.toDeptId, role: 'MANAGER' },
     select: { userId: true },
   })
   for (const { userId } of targetAdmins) {

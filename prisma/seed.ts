@@ -50,7 +50,7 @@ async function main() {
       },
     })
 
-    // 1 dept_admin per department
+    // 1 MANAGER per department
     await prisma.user.upsert({
       where: { email: `deptadmin@${slug}.internal` },
       update: {},
@@ -58,7 +58,7 @@ async function main() {
         clerkId: `seed_deptadmin_${slug}`,
         email: `deptadmin@${slug}.internal`,
         name: `${dept.name} Dept Admin`,
-        role: UserRole.DEPT_ADMIN,
+        role: UserRole.MANAGER,
         deptId: dept.id,
       },
     })
@@ -89,7 +89,7 @@ async function main() {
       },
     })
 
-    console.log(`  ✓ ${dept.name}: 1 super_admin, 1 dept_admin, 2 members, 1 document source`)
+    console.log(`  ✓ ${dept.name}: 1 super_admin, 1 MANAGER, 2 members, 1 document source`)
   }
 
   console.log('Seed complete.')

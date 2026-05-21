@@ -21,11 +21,11 @@ describe('deptMiddleware', () => {
   afterEach(() => jest.clearAllMocks())
 
   it('should return auth context when session is valid', async () => {
-    mockSession({ role: 'DEPT_ADMIN' })
+    mockSession({ role: 'MANAGER' })
     const ctx = await deptMiddleware()
     expect(ctx.user_id).toBe('user-1')
     expect(ctx.dept_id).toBe('dept-1')
-    expect(ctx.role).toBe('DEPT_ADMIN')
+    expect(ctx.role).toBe('MANAGER')
   })
 
   it('should throw UNAUTHORIZED when not logged in', async () => {
@@ -41,16 +41,16 @@ describe('deptMiddleware', () => {
 
 describe('requireRole', () => {
   it('should allow equal role', () => {
-    expect(() => requireRole('DEPT_ADMIN', 'DEPT_ADMIN')).not.toThrow()
+    expect(() => requireRole('MANAGER', 'MANAGER')).not.toThrow()
   })
 
   it('should allow higher role', () => {
-    expect(() => requireRole('SUPER_ADMIN', 'DEPT_ADMIN')).not.toThrow()
+    expect(() => requireRole('SUPER_ADMIN', 'MANAGER')).not.toThrow()
     expect(() => requireRole('SUPER_ADMIN', 'MEMBER')).not.toThrow()
   })
 
   it('should throw for insufficient role', () => {
-    expect(() => requireRole('MEMBER', 'DEPT_ADMIN')).toThrow()
-    expect(() => requireRole('DEPT_ADMIN', 'SUPER_ADMIN')).toThrow()
+    expect(() => requireRole('MEMBER', 'MANAGER')).toThrow()
+    expect(() => requireRole('MANAGER', 'SUPER_ADMIN')).toThrow()
   })
 })

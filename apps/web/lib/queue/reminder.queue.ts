@@ -47,7 +47,7 @@ export function startReminderWorker() {
 
       const dept = await prisma.department.findUnique({ where: { id: deptId }, select: { name: true } })
       const adminMemberships = await prisma.userDepartment.findMany({
-        where: { deptId, role: 'DEPT_ADMIN' },
+        where: { deptId, role: 'MANAGER' },
         select: { user: { select: { email: true, name: true } } },
       })
       const admins = adminMemberships.map((m) => m.user)

@@ -347,7 +347,7 @@ async function handleWorkflowRequest(
       // Notify first step's dept admins (push + email)
       const firstStep = chain[0]
       const firstAdmins = await prisma.userDepartment.findMany({
-        where: { deptId: firstStep.deptId, role: 'DEPT_ADMIN' },
+        where: { deptId: firstStep.deptId, role: 'MANAGER' },
         include: { user: { select: { name: true, email: true } } },
       })
       await Promise.all([
@@ -369,7 +369,7 @@ async function handleWorkflowRequest(
     } else {
       // Single-step: notify this dept's admins (push + email)
       const deptAdmins = await prisma.userDepartment.findMany({
-        where: { deptId, role: 'DEPT_ADMIN' },
+        where: { deptId, role: 'MANAGER' },
         include: { user: { select: { name: true, email: true } } },
       })
       await Promise.all([

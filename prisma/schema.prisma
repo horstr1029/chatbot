@@ -71,7 +71,7 @@ model UserDepartment {
 
 enum DeptRole {
   MEMBER
-  DEPT_ADMIN
+  MANAGER
 }
 
 model DocumentSource {

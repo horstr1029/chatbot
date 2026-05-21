@@ -23,7 +23,7 @@ export async function deptMiddleware(): Promise<AuthContext> {
 export function requireRole(userRole: UserRole, required: UserRole): void {
   const hierarchy: Record<UserRole, number> = {
     MEMBER: 0,
-    DEPT_ADMIN: 1,
+    MANAGER: 1,
     SUPER_ADMIN: 2,
   }
   if (hierarchy[userRole] < hierarchy[required]) {

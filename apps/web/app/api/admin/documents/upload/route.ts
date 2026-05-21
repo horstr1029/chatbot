@@ -16,7 +16,7 @@ const schema = z.object({
 export async function POST(req: Request) {
   let ctx
   try { ctx = await deptMiddleware() } catch { return apiResponse.error('UNAUTHORIZED', 'Unauthorized', 401) }
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   const body = schema.safeParse(await req.json())
   if (!body.success) return apiResponse.error('INVALID_REQUEST', 'Invalid body', 400)

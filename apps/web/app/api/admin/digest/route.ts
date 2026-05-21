@@ -9,7 +9,7 @@ export async function POST() {
   } catch {
     return apiResponse.error('UNAUTHORIZED', 'Unauthorized', 401)
   }
-  requireRole(ctx.role, 'DEPT_ADMIN')
+  requireRole(ctx.role, 'MANAGER')
 
   await triggerDigestNow(ctx.dept_id)
   return apiResponse.success({ queued: true })
