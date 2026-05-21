@@ -40,7 +40,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
   const [expandedLeave, setExpandedLeave] = useState<string | null>(null)
-  const [leaveEdits, setLeaveEdits] = useState<Record<string, { yearlyAllocation: string; monthlyAccrual: string }>>({})
+  const [leaveEdits, setLeaveEdits] = useState<Record<string, { yearlyAllocation: string; monthlyAccrual: string; balance: string }>>({})
   const [leaveSaving, setLeaveSaving] = useState<string | null>(null)
 
   const canEdit = currentUserRole === 'SUPER_ADMIN' || currentUserRole === 'DEPT_ADMIN'
@@ -99,6 +99,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
         [userId]: {
           yearlyAllocation: String(balance?.yearlyAllocation ?? 15),
           monthlyAccrual: String(balance?.monthlyAccrual ?? 1.25),
+          balance: String(balance?.balance ?? 0),
         },
       }))
     }
@@ -114,6 +115,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
       body: JSON.stringify({
         yearlyAllocation: Number(edit.yearlyAllocation),
         monthlyAccrual: Number(edit.monthlyAccrual),
+        balance: Number(edit.balance),
       }),
     })
     setLeaveSaving(null)
@@ -284,10 +286,19 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
                             />
                           </div>
                           <div>
-                            <p className="text-[11px] font-medium text-text-muted mb-1.5">Current balance</p>
-                            <p className={`text-[14px] font-semibold pt-1 ${u.leaveBalance && u.leaveBalance.balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                              {u.leaveBalance ? `${u.leaveBalance.balance.toFixed(1)} days` : '—'}
-                            </p>
+                            <p className="text-[11px] font-medium text-text-muted mb-1.5">Current balance (days)</p>
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={leaveEdits[u.id]?.balance ?? String(u.leaveBalance?.balance ?? 0)}
+                              onChange={(e) =>
+                                setLeaveEdits((prev) => ({
+                                  ...prev,
+                                  [u.id]: { ...prev[u.id], balance: e.target.value },
+                                }))
+                              }
+                              className="w-24 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
+                            />
                           </div>
                           <div className="flex gap-2 ml-auto">
                             <button

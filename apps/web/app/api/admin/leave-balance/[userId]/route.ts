@@ -21,6 +21,7 @@ export const GET = withErrorHandler(async (_req, ctx) => {
 const putSchema = z.object({
   yearlyAllocation: z.number().int().min(0).optional(),
   monthlyAccrual: z.number().min(0).optional(),
+  balance: z.number().optional(),
   resetBalance: z.boolean().optional(),
 })
 
@@ -41,6 +42,7 @@ export const PUT = withErrorHandler(async (req, ctx) => {
     data: {
       ...(body.yearlyAllocation !== undefined && { yearlyAllocation: body.yearlyAllocation }),
       ...(body.monthlyAccrual !== undefined && { monthlyAccrual: body.monthlyAccrual }),
+      ...(body.balance !== undefined && { balance: body.balance }),
       ...(body.resetBalance === true && { balance: 0 }),
     },
   })
