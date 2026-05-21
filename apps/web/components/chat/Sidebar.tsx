@@ -32,8 +32,13 @@ function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
   onStar: (e: React.MouseEvent) => void
   onDelete: (e: React.MouseEvent) => void
 }) {
+  const [hovered, setHovered] = useState(false)
   return (
-    <div className="group flex items-center gap-0.5 mb-0.5">
+    <div
+      className="flex items-center gap-0.5 mb-0.5"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <button
         onClick={onSelect}
         className={`flex items-center gap-2 flex-1 min-w-0 pl-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
@@ -48,7 +53,8 @@ function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
       <button
         onClick={onDelete}
         title="Delete"
-        className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded text-text-muted opacity-0 group-hover:opacity-100 hover:text-red-600 hover:bg-red-50 transition-colors"
+        style={{ opacity: hovered ? 1 : 0 }}
+        className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
       >
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -57,10 +63,9 @@ function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
       <button
         onClick={onStar}
         title={starred ? 'Unstar' : 'Star'}
-        className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded transition-all ${
-          starred
-            ? 'text-amber-400 opacity-100'
-            : 'text-text-muted opacity-0 group-hover:opacity-100 hover:text-amber-400'
+        style={{ opacity: hovered || starred ? 1 : 0 }}
+        className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded transition-colors ${
+          starred ? 'text-amber-400' : 'text-text-muted hover:text-amber-400'
         }`}
       >
         <svg className="w-3 h-3" fill={starred ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
