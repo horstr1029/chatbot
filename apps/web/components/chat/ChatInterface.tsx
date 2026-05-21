@@ -447,6 +447,14 @@ export function ChatInterface({
                         body: JSON.stringify({ templateId: formDataMap[m.id].template.id, values }),
                       })
                       setHiddenFormIds((prev) => new Set(Array.from(prev).concat(m.id)))
+                      setMessages((prev) => [
+                        ...prev,
+                        {
+                          id: `form-confirm-${m.id}`,
+                          role: 'assistant',
+                          content: `Your **${formDataMap[m.id].template.name}** has been submitted successfully. Your admin has been notified and will review it shortly.`,
+                        },
+                      ])
                     }}
                     onCancel={() =>
                       setHiddenFormIds((prev) => new Set(Array.from(prev).concat(m.id)))
