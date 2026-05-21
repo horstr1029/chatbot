@@ -33,37 +33,26 @@ function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
   onDelete: (e: React.MouseEvent) => void
 }) {
   return (
-    <div className="flex items-center gap-0.5 mb-0.5">
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
       <button
         onClick={onSelect}
-        className={`flex items-center gap-2 flex-1 min-w-0 pl-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
-          active ? 'bg-brand-50 text-brand-700 font-medium' : 'text-text-secondary hover:bg-surface-tertiary'
-        }`}
+        style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 6px 6px 10px', borderRadius: 6, fontSize: 13, cursor: 'pointer', border: 'none', background: active ? '#eff6ff' : 'transparent', color: active ? '#1d4ed8' : '#4b5563', fontWeight: active ? 500 : 400, textAlign: 'left' }}
       >
-        <span className="flex-1 truncate text-left">{s.title ?? 'Untitled'}</span>
-        <span className="text-[11px] text-text-muted flex-shrink-0" suppressHydrationWarning>
-          {new Date(s.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-        </span>
+        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title ?? 'Untitled'}</span>
       </button>
       <button
         onClick={onDelete}
         title="Delete chat"
-        className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+        style={{ flexShrink: 0, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 15, lineHeight: 1, padding: 0 }}
       >
-        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
+        ×
       </button>
       <button
         onClick={onStar}
         title={starred ? 'Unstar' : 'Star'}
-        className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded transition-colors ${
-          starred ? 'text-amber-400' : 'text-text-muted hover:text-amber-400'
-        }`}
+        style={{ flexShrink: 0, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: 'none', background: 'none', cursor: 'pointer', color: starred ? '#f59e0b' : '#d1d5db', fontSize: 13, padding: 0 }}
       >
-        <svg className="w-3 h-3" fill={starred ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-        </svg>
+        ★
       </button>
     </div>
   )
@@ -85,6 +74,25 @@ export function Sidebar({
   const router = useRouter()
   const [switching, setSwitching] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [width, setWidth] = useState(220)
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
+
+  function onDragStart(e: React.MouseEvent) {
+    e.preventDefault()
+    dragRef.current = { startX: e.clientX, startWidth: width }
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return
+      const next = Math.max(160, Math.min(400, dragRef.current.startWidth + ev.clientX - dragRef.current.startX))
+      setWidth(next)
+    }
+    const onUp = () => {
+      dragRef.current = null
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SessionItem[]>([])
@@ -156,7 +164,7 @@ export function Sidebar({
   }
 
   return (
-    <div className="w-[220px] flex-shrink-0 bg-white border-r border-border flex flex-col h-full">
+    <div style={{ width, flexShrink: 0, position: 'relative' }} className="bg-white border-r border-border flex flex-col h-full">
       <div className="px-4 pt-4 pb-2 flex items-center gap-2">
         <img src="/logo.jpg" alt="MST Chatbot" className="h-10 object-contain" />
       </div>
@@ -281,6 +289,13 @@ export function Sidebar({
         <DarkModeToggle />
         <LogoutButton />
       </div>
+
+      {/* Resize handle */}
+      <div
+        onMouseDown={onDragStart}
+        style={{ position: 'absolute', top: 0, right: 0, width: 4, height: '100%', cursor: 'col-resize', zIndex: 10 }}
+        title="Drag to resize"
+      />
     </div>
   )
 }
