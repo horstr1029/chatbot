@@ -9,10 +9,10 @@ interface Props {
 export default async function EmbedPage({ params }: Props) {
   const dept = await prisma.department.findUnique({
     where: { widgetToken: params.token },
-    select: { id: true, name: true, llmModel: true },
+    select: { id: true, name: true, llmModel: true, widgetTokenExpiresAt: true },
   })
 
-  if (!dept) {
+  if (!dept || (dept.widgetTokenExpiresAt && dept.widgetTokenExpiresAt < new Date())) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#9ca3af', fontSize: 13 }}>
         Widget not found or disabled.

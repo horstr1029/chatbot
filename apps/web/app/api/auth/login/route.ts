@@ -2,8 +2,17 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/client'
 import { verifyPassword } from '@/lib/auth/password'
 import { getSession } from '@/lib/auth/session'
+import { rateLimit } from '@/lib/api/rateLimit'
+import { headers } from 'next/headers'
 
 export async function POST(req: Request) {
+  const ip = (await headers()).get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+  try {
+    await rateLimit(`login:${ip}`, 10, 60)
+  } catch {
+    return NextResponse.json({ error: 'Too many login attempts. Try again in a minute.' }, { status: 429 })
+  }
+
   const { email, password } = await req.json()
 
   if (!email || !password) {

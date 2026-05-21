@@ -1,4 +1,7 @@
 import { prisma } from '@/lib/db/client'
+import { encryptField, decryptField } from '@/lib/crypto/encrypt'
+
+const SENSITIVE_KEYS = new Set(['smtp_pass'])
 
 export type SmtpSettings = {
   host: string
@@ -15,7 +18,7 @@ export async function getSmtpSettings(): Promise<SmtpSettings> {
   const rows = await prisma.systemSetting.findMany({
     where: { key: { in: [...SMTP_KEYS] } },
   })
-  const map = Object.fromEntries(rows.map((r) => [r.key, r.value]))
+  const map = Object.fromEntries(rows.map((r) => [r.key, SENSITIVE_KEYS.has(r.key) ? decryptField(r.value) : r.value]))
 
   return {
     host:   map['smtp_host']   ?? process.env.SMTP_HOST   ?? '',
@@ -28,7 +31,7 @@ export async function getSmtpSettings(): Promise<SmtpSettings> {
 }
 
 export async function saveSmtpSettings(s: Partial<SmtpSettings>) {
-  const entries: Array<{ key: string; value: string }> = [
+  const raw: Array<{ key: string; value: string }> = [
     s.host   !== undefined && { key: 'smtp_host',   value: s.host },
     s.port   !== undefined && { key: 'smtp_port',   value: s.port },
     s.secure !== undefined && { key: 'smtp_secure', value: s.secure },
@@ -36,6 +39,11 @@ export async function saveSmtpSettings(s: Partial<SmtpSettings>) {
     s.pass   !== undefined && { key: 'smtp_pass',   value: s.pass },
     s.from   !== undefined && { key: 'smtp_from',   value: s.from },
   ].filter(Boolean) as Array<{ key: string; value: string }>
+
+  const entries = raw.map((e) => ({
+    key: e.key,
+    value: SENSITIVE_KEYS.has(e.key) && e.value ? encryptField(e.value) : e.value,
+  }))
 
   await prisma.$transaction(
     entries.map((e) =>

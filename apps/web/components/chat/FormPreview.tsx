@@ -6,7 +6,7 @@ import type { FormField } from '@/lib/llm/formFiller'
 interface FormPreviewProps {
   template: { id: string; name: string; fields: FormField[] }
   filled: Record<string, string>
-  onSubmit?: () => void
+  onSubmit?: (values: Record<string, string>) => void | Promise<void>
   onCancel?: () => void
 }
 
@@ -24,10 +24,10 @@ export function FormPreview({ template, filled, onSubmit, onCancel }: FormPrevie
     setValues((prev) => ({ ...prev, [name]: value }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    await onSubmit?.(values)
     setSubmitted(true)
-    onSubmit?.()
   }
 
   if (submitted) {

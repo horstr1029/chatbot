@@ -7,6 +7,7 @@ import { n8nClient } from '@/lib/n8n/client'
 import { cancelWorkflowReminder } from '@/lib/queue/reminder.queue'
 import { notifyUser } from '@/lib/push/webpush'
 import { sendSlackNotification } from '@/lib/slack/notify'
+import { sendWorkflowApprovalRequestEmail } from '@/lib/email/mailer'
 import { Errors } from '@/lib/errors'
 
 type RouteContext = { params: { id: string } }
@@ -55,19 +56,33 @@ export const POST = withErrorHandler(async (_req, ctx) => {
     )
 
     if (remainingSteps.length > 0) {
-      // Notify the next step's dept admins
+      // Notify the next step's dept admins (push + email)
       const nextStep = remainingSteps[0]
       const nextAdmins = await prisma.userDepartment.findMany({
         where: { deptId: nextStep.approvingDeptId, role: 'DEPT_ADMIN' },
-        select: { userId: true },
+        include: { user: { select: { name: true, email: true } } },
       })
-      for (const { userId } of nextAdmins) {
-        await notifyUser(userId, {
-          title: 'Workflow approval needed',
-          body: `${request.description.slice(0, 80)} (step: ${nextStep.label})`,
-          url: '/admin/workflows',
-        })
-      }
+      const submitter = await prisma.user.findUnique({
+        where: { id: request.requestedById },
+        select: { name: true, email: true },
+      })
+      const requesterName = submitter?.name ?? submitter?.email ?? 'A user'
+      await Promise.all([
+        ...nextAdmins.map(({ userId }) =>
+          notifyUser(userId, {
+            title: 'Workflow approval needed',
+            body: `${request.description.slice(0, 80)} (step: ${nextStep.label})`,
+            url: '/admin/workflows',
+          }),
+        ),
+        sendWorkflowApprovalRequestEmail(
+          nextAdmins.map((a) => ({ email: a.user.email, name: a.user.name })),
+          dept?.name ?? '',
+          requesterName,
+          request.description,
+          nextStep.label,
+        ),
+      ])
       return apiResponse.success({ approved: true, allStepsComplete: false })
     }
 

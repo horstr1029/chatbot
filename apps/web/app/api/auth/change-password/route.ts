@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/client'
 import { verifyPassword, hashPassword } from '@/lib/auth/password'
 import { getSession } from '@/lib/auth/session'
+import { rateLimit } from '@/lib/api/rateLimit'
+import { headers } from 'next/headers'
 import { z } from 'zod'
 
 const Schema = z.object({
@@ -13,6 +15,13 @@ export async function POST(req: Request) {
   const session = await getSession()
   if (!session.isLoggedIn || !session.userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const ip = (await headers()).get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+  try {
+    await rateLimit(`change-pw:${ip}:${session.userId}`, 5, 3600)
+  } catch {
+    return NextResponse.json({ error: 'Too many password change attempts. Try again later.' }, { status: 429 })
   }
 
   const body = Schema.safeParse(await req.json())

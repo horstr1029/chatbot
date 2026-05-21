@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { streamText } from 'ai'
+import { streamText, StreamData } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { deptMiddleware } from '@/lib/auth/middleware'
 import { getDept } from '@/lib/dept/getDept'
@@ -19,6 +19,7 @@ import type { FormField } from '@/lib/llm/formFiller'
 import { parseReminder } from '@/lib/llm/reminderParser'
 import { nextCronRun } from '@/lib/queue/reminder-user.queue'
 import { notifyUser } from '@/lib/push/webpush'
+import { sendWorkflowApprovalRequestEmail } from '@/lib/email/mailer'
 import { z } from 'zod'
 
 function log(level: 'info' | 'warn' | 'error', event: string, data?: object) {
@@ -118,17 +119,17 @@ export async function POST(req: Request) {
     if (formResult) {
       const { template, filled } = formResult
       const replyText = "I've pre-filled the form below — review and submit when ready."
-      const formDataHeader = Buffer.from(JSON.stringify({ template, filled })).toString('base64')
+      const sd = new StreamData()
+      sd.append({ type: 'form', template, filled })
       const result = await streamText({
         model: ollamaProvider()(dept.llmModel),
         messages: [{ role: 'user', content: replyText }],
         system: 'Repeat the message exactly as given, word for word.',
+        onFinish: () => sd.close(),
       })
       return result.toDataStreamResponse({
-        headers: {
-          'x-intent': 'FORM_REQUEST',
-          'x-form-data': formDataHeader,
-        },
+        headers: { 'x-intent': 'FORM_REQUEST' },
+        data: sd,
       })
     }
     // No templates — fall through to normal chat
@@ -219,17 +220,21 @@ async function handleWorkflowRequest(
 
     const n8nResumeUrl = await n8nClient.getExecutionResumeUrl(n8nWorkflow.id)
 
-    const wfRecord = await prisma.workflowRequest.create({
-      data: {
-        userMessage,
-        description,
-        n8nWorkflowId: n8nWorkflow.id,
-        n8nResumeUrl,
-        status: 'PENDING',
-        deptId,
-        requestedById: userId,
-      },
-    })
+    const [wfRecord, requester] = await Promise.all([
+      prisma.workflowRequest.create({
+        data: {
+          userMessage,
+          description,
+          n8nWorkflowId: n8nWorkflow.id,
+          n8nResumeUrl,
+          status: 'PENDING',
+          deptId,
+          requestedById: userId,
+        },
+      }),
+      prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
+    ])
+    const requesterName = requester?.name ?? requester?.email ?? 'A user'
 
     // ── Multi-step approval chain ──────────────────────────────
     const chain = dept.approvalChain as { stepOrder: number; label: string; deptId: string }[] | null
@@ -243,21 +248,51 @@ async function handleWorkflowRequest(
         })),
       })
 
-      // Notify first step's dept admins
+      // Notify first step's dept admins (push + email)
       const firstStep = chain[0]
       const firstAdmins = await prisma.userDepartment.findMany({
         where: { deptId: firstStep.deptId, role: 'DEPT_ADMIN' },
-        select: { userId: true },
+        include: { user: { select: { name: true, email: true } } },
       })
-      for (const { userId: adminId } of firstAdmins) {
-        await notifyUser(adminId, {
-          title: 'Workflow approval needed',
-          body: description.slice(0, 80),
-          url: '/admin/workflows',
-        })
-      }
+      await Promise.all([
+        ...firstAdmins.map(({ userId: adminId }) =>
+          notifyUser(adminId, {
+            title: 'Workflow approval needed',
+            body: description.slice(0, 80),
+            url: '/admin/workflows',
+          }),
+        ),
+        sendWorkflowApprovalRequestEmail(
+          firstAdmins.map((a) => ({ email: a.user.email, name: a.user.name })),
+          dept.name,
+          requesterName,
+          description,
+          firstStep.label,
+        ),
+      ])
+    } else {
+      // Single-step: notify this dept's admins (push + email)
+      const deptAdmins = await prisma.userDepartment.findMany({
+        where: { deptId, role: 'DEPT_ADMIN' },
+        include: { user: { select: { name: true, email: true } } },
+      })
+      await Promise.all([
+        ...deptAdmins.map(({ userId: adminId }) =>
+          notifyUser(adminId, {
+            title: 'Workflow approval needed',
+            body: description.slice(0, 80),
+            url: '/admin/workflows',
+          }),
+        ),
+        sendWorkflowApprovalRequestEmail(
+          deptAdmins.map((a) => ({ email: a.user.email, name: a.user.name })),
+          dept.name,
+          requesterName,
+          description,
+        ),
+      ])
     }
-    // ── End multi-step ─────────────────────────────────────────
+    // ── End approval notifications ─────────────────────────────
 
     await scheduleWorkflowReminder(wfRecord.id, deptId)
 

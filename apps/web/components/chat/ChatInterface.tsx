@@ -78,10 +78,10 @@ export function ChatInterface({
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const pendingCitations = useRef<Citation[]>([])
   const pendingConfidence = useRef<number | null>(null)
-  const pendingFormData = useRef<FormData | null>(null)
+  const processedStreamDataLengthRef = useRef(0)
   const sessionIdRef = useRef<string | null>(null)
 
-  const { messages, input, setInput, append, isLoading, setMessages } = useChat({
+  const { messages, input, setInput, append, isLoading, setMessages, data: chatStreamData } = useChat({
     api: '/api/chat',
     onResponse: (res) => {
       const raw = res.headers.get('x-citations')
@@ -93,13 +93,6 @@ export function ChatInterface({
         const parsed = parseFloat(conf)
         if (!isNaN(parsed)) pendingConfidence.current = parsed
       }
-      const formDataHeader = res.headers.get('x-form-data')
-      if (formDataHeader) {
-        try {
-          const decoded = JSON.parse(atob(formDataHeader)) as FormData
-          pendingFormData.current = decoded
-        } catch {}
-      }
     },
     onFinish: async (msg) => {
       if (pendingCitations.current.length > 0) {
@@ -109,10 +102,6 @@ export function ChatInterface({
       if (pendingConfidence.current !== null) {
         setConfidenceMap((prev) => ({ ...prev, [msg.id]: pendingConfidence.current! }))
         pendingConfidence.current = null
-      }
-      if (pendingFormData.current !== null) {
-        setFormDataMap((prev) => ({ ...prev, [msg.id]: pendingFormData.current! }))
-        pendingFormData.current = null
       }
       await persistSession()
       const question = messages.findLast((m) => m.role === 'user')?.content ?? ''
@@ -168,6 +157,23 @@ export function ChatInterface({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
+
+  // Correlate StreamData form items with their assistant message
+  useEffect(() => {
+    if (!chatStreamData || chatStreamData.length <= processedStreamDataLengthRef.current) return
+    const newItems = chatStreamData.slice(processedStreamDataLengthRef.current)
+    const formItem = newItems.find(
+      (item) => item !== null && typeof item === 'object' && !Array.isArray(item) && 'type' in (item as object) && (item as { type: string }).type === 'form',
+    )
+    if (!formItem) {
+      processedStreamDataLengthRef.current = chatStreamData.length
+      return
+    }
+    const latestAssistant = [...messages].reverse().find((m) => m.role === 'assistant')
+    if (!latestAssistant) return  // messages not yet updated — will retry when messages changes
+    setFormDataMap((prev) => ({ ...prev, [latestAssistant.id]: formItem as FormData }))
+    processedStreamDataLengthRef.current = chatStreamData.length
+  }, [chatStreamData, messages])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -434,6 +440,14 @@ export function ChatInterface({
                   <FormPreview
                     template={formDataMap[m.id].template}
                     filled={formDataMap[m.id].filled}
+                    onSubmit={async (values) => {
+                      await fetch('/api/chat/submit-form', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ templateId: formDataMap[m.id].template.id, values }),
+                      })
+                      setHiddenFormIds((prev) => new Set(Array.from(prev).concat(m.id)))
+                    }}
                     onCancel={() =>
                       setHiddenFormIds((prev) => new Set(Array.from(prev).concat(m.id)))
                     }

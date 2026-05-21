@@ -3,6 +3,15 @@ import { getSmtpSettings } from '@/lib/settings/systemSettings'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
+
 async function createTransport() {
   const s = await getSmtpSettings()
   return nodemailer.createTransport({
@@ -24,12 +33,12 @@ export async function sendDigestEmail(
 
   const transport = await createTransport()
   const from = s.from || `"MST Chatbot" <${s.user}>`
-  const displayName = name ?? to
+  const displayName = escapeHtml(name ?? to)
   const { sessionCount, thumbsUp, thumbsDown, questions } = stats
   const total = thumbsUp + thumbsDown
   const pct = total > 0 ? Math.round((thumbsUp / total) * 100) : null
   const questionRows = questions.length
-    ? questions.map((q) => `<li style="margin:0 0 6px;font-size:13px;color:#4b5563;">${q}</li>`).join('')
+    ? questions.map((q) => `<li style="margin:0 0 6px;font-size:13px;color:#4b5563;">${escapeHtml(q)}</li>`).join('')
     : '<li style="font-size:13px;color:#9ca3af;">No questions this week</li>'
 
   await transport.sendMail({
@@ -88,14 +97,14 @@ export async function sendExpiryAlert(
 
   const transport = await createTransport()
   const from = s.from || `"MST Chatbot" <${s.user}>`
-  const displayName = name ?? to
+  const displayName = escapeHtml(name ?? to)
   const count = sources.length
 
   const rows = sources
     .map(
       (src) =>
         `<tr>
-          <td style="padding:8px 12px;font-size:13px;color:#111827;border-bottom:1px solid #e5e7eb;">${src.name}</td>
+          <td style="padding:8px 12px;font-size:13px;color:#111827;border-bottom:1px solid #e5e7eb;">${escapeHtml(src.name)}</td>
           <td style="padding:8px 12px;font-size:13px;color:#d97706;border-bottom:1px solid #e5e7eb;white-space:nowrap;">${new Date(src.expiresAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
         </tr>`,
     )
@@ -144,7 +153,7 @@ export async function sendPasswordResetEmail(to: string, name: string | null, to
 
   const transport = await createTransport()
   const from = s.from || `"MST Chatbot" <${s.user}>`
-  const displayName = name ?? to
+  const displayName = escapeHtml(name ?? to)
   const resetUrl = `${APP_URL}/reset-password/${token}`
 
   await transport.sendMail({
@@ -186,9 +195,10 @@ export async function sendWorkflowReminderEmail(
 
   const transport = await createTransport()
   const from = s.from || `"MST Chatbot" <${s.user}>`
-  const shortDesc = description.slice(0, 120)
+  const shortDesc = escapeHtml(description.slice(0, 120))
 
   for (const admin of admins) {
+    const adminName = escapeHtml(admin.name ?? admin.email)
     await transport.sendMail({
       from,
       to: admin.email,
@@ -201,7 +211,7 @@ export async function sendWorkflowReminderEmail(
             <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">${deptName}</p>
             <h2 style="margin:0 0 8px;font-size:18px;color:#111827;">Workflow approval needed</h2>
             <p style="margin:0 0 20px;font-size:14px;color:#4b5563;line-height:1.6;">
-              Hi ${admin.name ?? admin.email}, a workflow request has been waiting for your approval for more than 48 hours.
+              Hi ${adminName}, a workflow request has been waiting for your approval for more than 48 hours.
             </p>
             <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:16px 20px;margin-bottom:24px;">
               <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#d97706;text-transform:uppercase;letter-spacing:.05em;">Request</p>
@@ -217,6 +227,54 @@ export async function sendWorkflowReminderEmail(
   }
 }
 
+export async function sendWorkflowApprovalRequestEmail(
+  admins: { email: string; name: string | null }[],
+  deptName: string,
+  requestedByName: string,
+  description: string,
+  stepLabel?: string,
+) {
+  const s = await getSmtpSettings()
+  if (!s.host || !s.user) return
+
+  const transport = await createTransport()
+  const from = s.from || `"MST Chatbot" <${s.user}>`
+  const shortDesc = escapeHtml(description.slice(0, 160))
+  const stepLine = stepLabel ? ` (step: <strong>${escapeHtml(stepLabel)}</strong>)` : ''
+
+  for (const admin of admins) {
+    const adminName = escapeHtml(admin.name ?? admin.email)
+    await transport.sendMail({
+      from,
+      to: admin.email,
+      subject: `${deptName} — workflow approval needed`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family:'DM Sans',Arial,sans-serif;background:#f9fafb;margin:0;padding:32px;">
+          <div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:36px;">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">${escapeHtml(deptName)}</p>
+            <h2 style="margin:0 0 8px;font-size:18px;color:#111827;">Workflow approval needed</h2>
+            <p style="margin:0 0 20px;font-size:14px;color:#4b5563;line-height:1.6;">
+              Hi ${adminName}, <strong>${escapeHtml(requestedByName)}</strong> has submitted a workflow request that requires your approval${stepLine}.
+            </p>
+            <div style="background:#eff6ff;border:1px solid #dbeafe;border-radius:6px;padding:16px 20px;margin-bottom:24px;">
+              <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#2563eb;text-transform:uppercase;letter-spacing:.05em;">Request</p>
+              <p style="margin:0;font-size:13px;color:#111827;">${shortDesc}</p>
+            </div>
+            <a href="${APP_URL}/admin/workflows" style="display:inline-block;padding:10px 20px;background:#111827;color:#ffffff;border-radius:6px;font-size:13px;font-weight:500;text-decoration:none;">Review &amp; approve</a>
+            <p style="margin:24px 0 0;font-size:12px;color:#9ca3af;">
+              Log in to the admin panel to approve or reject this request.
+            </p>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `${deptName} — workflow approval needed\n\nHi ${admin.name ?? admin.email},\n\n${requestedByName} has submitted a workflow request${stepLabel ? ` (step: ${stepLabel})` : ''}:\n\n"${description.slice(0, 160)}"\n\nReview it here: ${APP_URL}/admin/workflows`,
+    })
+  }
+}
+
 export async function sendWelcomeEmail(to: string, name: string | null, tempPassword: string) {
   const s = await getSmtpSettings()
   if (!s.host || !s.user) {
@@ -226,7 +284,7 @@ export async function sendWelcomeEmail(to: string, name: string | null, tempPass
 
   const transport = await createTransport()
   const from = s.from || `"MST Chatbot" <${s.user}>`
-  const displayName = name ?? to
+  const displayName = escapeHtml(name ?? to)
 
   await transport.sendMail({
     from,

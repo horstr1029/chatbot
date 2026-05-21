@@ -16,10 +16,14 @@ export async function GET() {
     prisma.chatSession.findMany({
       where: { updatedAt: { gte: since30 } },
       select: { userId: true, deptId: true, createdAt: true, messages: true },
+      take: 2000,
+      orderBy: { createdAt: 'desc' },
     }),
     prisma.chatSession.findMany({
       where: { updatedAt: { gte: since7 } },
       select: { userId: true, createdAt: true },
+      take: 500,
+      orderBy: { createdAt: 'desc' },
     }),
     prisma.department.findMany({ select: { id: true, name: true } }),
     prisma.user.count({ where: { deletedAt: null } }),

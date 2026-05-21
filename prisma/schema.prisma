@@ -14,8 +14,9 @@ model Department {
   systemPrompt    String?  @db.Text
   llmModel        String   @default("mistral:7b-instruct")
   embedModel      String   @default("nomic-embed-text")
-  widgetToken     String?  @unique
-  slackWebhookUrl String?
+  widgetToken          String?   @unique
+  widgetTokenExpiresAt DateTime?
+  slackWebhookUrl      String?
   approvalChain   Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

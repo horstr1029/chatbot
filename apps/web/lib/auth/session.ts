@@ -13,9 +13,14 @@ export interface SessionData {
   mustChangePassword: boolean
 }
 
+const SESSION_SECRET = process.env.SESSION_SECRET
+if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
+  throw new Error('SESSION_SECRET env var must be set to at least 32 characters')
+}
+
 export const sessionOptions = {
   cookieName: 'chatbot_session',
-  password: process.env.SESSION_SECRET ?? 'fallback-dev-secret-change-in-production-!!',
+  password: SESSION_SECRET,
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
