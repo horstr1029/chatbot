@@ -27,13 +27,17 @@ export const POST = withErrorHandler(async (req) => {
   if (template.deptId !== ctx.dept_id) throw Errors.DEPT_MISMATCH()
   if (!template.active) return apiResponse.error('NOT_FOUND', 'Form template not available', 404)
 
-  const dept = await getDept(ctx.dept_id)
+  const [dept, user] = await Promise.all([
+    getDept(ctx.dept_id),
+    prisma.user.findUnique({ where: { id: ctx.user_id }, select: { name: true, email: true } }),
+  ])
   const fields = template.fields as FormField[]
 
   const filled = await fillForm(
     body.data.description,
     { id: template.id, name: template.name, fields },
     dept.llmModel,
+    user ?? undefined,
   )
 
   return apiResponse.success({

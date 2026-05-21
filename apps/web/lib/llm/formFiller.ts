@@ -16,7 +16,11 @@ function ollamaProvider() {
   })
 }
 
-function buildPrompt(description: string, fields: FormField[]): string {
+function buildPrompt(
+  description: string,
+  fields: FormField[],
+  userContext?: { name?: string | null; email?: string | null },
+): string {
   const fieldList = fields
     .map((f) => {
       const optionNote = f.type === 'select' && f.options?.length
@@ -26,10 +30,17 @@ function buildPrompt(description: string, fields: FormField[]): string {
     })
     .join('\n')
 
-  return `You are a form-filling assistant. Given the user's description and a list of form fields, extract the relevant information and return ONLY a valid JSON object mapping each field name to its value. If information for a field is missing, use an empty string.
+  const contextLines: string[] = []
+  if (userContext?.name) contextLines.push(`Employee name: ${userContext.name}`)
+  if (userContext?.email) contextLines.push(`Employee email: ${userContext.email}`)
+  const contextBlock = contextLines.length
+    ? `\nKnown information about the employee:\n${contextLines.join('\n')}\n`
+    : ''
+
+  return `You are a form-filling assistant. Given the user's description and a list of form fields, extract the relevant information and return ONLY a valid JSON object mapping each field name to its value. If information for a field is missing, use an empty string. Use the known employee information to fill name or email fields.
 
 User description: "${description}"
-
+${contextBlock}
 Form fields:
 ${fieldList}
 
@@ -41,12 +52,13 @@ export async function fillForm(
   description: string,
   template: { id: string; name: string; fields: FormField[] },
   model: string,
+  userContext?: { name?: string | null; email?: string | null },
 ): Promise<Record<string, string>> {
   const provider = ollamaProvider()
 
   const { text } = await generateText({
     model: provider(model),
-    prompt: buildPrompt(description, template.fields),
+    prompt: buildPrompt(description, template.fields, userContext),
   })
 
   // Extract JSON from response — handle potential markdown fences

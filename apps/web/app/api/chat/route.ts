@@ -115,7 +115,11 @@ export async function POST(req: Request) {
 
   // ── Form request path ──────────────────────────────────────────
   if (intent === 'FORM_REQUEST') {
-    const formResult = await handleFormRequest(userMessage, ctx.dept_id, dept.llmModel)
+    const formUser = await prisma.user.findUnique({
+      where: { id: ctx.user_id },
+      select: { name: true, email: true },
+    })
+    const formResult = await handleFormRequest(userMessage, ctx.dept_id, dept.llmModel, formUser ?? undefined)
     if (formResult) {
       const { template, filled } = formResult
       const replyText = "I've pre-filled the form below — review and submit when ready."
@@ -174,6 +178,7 @@ async function handleFormRequest(
   userMessage: string,
   deptId: string,
   llmModel: string,
+  userContext?: { name?: string | null; email?: string | null },
 ): Promise<{ template: { id: string; name: string; fields: FormField[] }; filled: Record<string, string> } | null> {
   const templates = await prisma.formTemplate.findMany({
     where: { deptId, active: true },
@@ -197,7 +202,7 @@ async function handleFormRequest(
   }
 
   const fields = best.fields as FormField[]
-  const filled = await fillForm(userMessage, { id: best.id, name: best.name, fields }, llmModel)
+  const filled = await fillForm(userMessage, { id: best.id, name: best.name, fields }, llmModel, userContext)
   return { template: { id: best.id, name: best.name, fields }, filled }
 }
 
