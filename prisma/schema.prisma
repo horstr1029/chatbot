@@ -30,6 +30,7 @@ model Department {
   crossDeptRequestsFrom    CrossDeptRequest[] @relation("crossFrom")
   crossDeptRequestsTo      CrossDeptRequest[] @relation("crossTo")
   workflowApprovalSteps    WorkflowApprovalStep[] @relation("stepApprovingDept")
+  leaveBalances            LeaveBalance[]
 }
 
 model User {
@@ -51,6 +52,7 @@ model User {
   reminders             Reminder[]
   approvalSteps         WorkflowApprovalStep[] @relation("stepApprovedBy")
   crossDeptRequests     CrossDeptRequest[]     @relation("crossRequester")
+  leaveBalances         LeaveBalance[]
 }
 
 model UserDepartment {
@@ -97,6 +99,11 @@ model WorkflowRequest {
   n8nWorkflowId   String?
   n8nResumeUrl    String?
   status          WorkflowRequestStatus @default(PENDING)
+  isLeaveRequest  Boolean   @default(false)
+  leaveStartDate  DateTime?
+  leaveEndDate    DateTime?
+  leaveDays       Float?
+  leaveType       String?
   rejectionReason String?
   deptId          String
   dept            Department            @relation(fields: [deptId], references: [id])
@@ -252,4 +259,20 @@ enum CrossDeptStatus {
   IN_PROGRESS
   RESOLVED
   CANCELLED
+}
+
+model LeaveBalance {
+  id               String     @id @default(cuid())
+  userId           String
+  user             User       @relation(fields: [userId], references: [id])
+  deptId           String
+  dept             Department @relation(fields: [deptId], references: [id])
+  yearlyAllocation Int        @default(15)
+  monthlyAccrual   Float      @default(1.25)
+  balance          Float      @default(0)
+  lastAccrualDate  DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@unique([userId, deptId])
 }

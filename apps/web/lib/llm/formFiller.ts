@@ -4,7 +4,7 @@ import { createOpenAI } from '@ai-sdk/openai'
 export type FormField = {
   name: string
   label: string
-  type: 'text' | 'date' | 'select' | 'textarea' | 'number'
+  type: 'text' | 'date' | 'select' | 'textarea' | 'number' | 'radio'
   required?: boolean
   options?: string[]
 }

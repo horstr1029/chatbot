@@ -20,6 +20,7 @@ import { parseReminder } from '@/lib/llm/reminderParser'
 import { nextCronRun } from '@/lib/queue/reminder-user.queue'
 import { notifyUser } from '@/lib/push/webpush'
 import { sendWorkflowApprovalRequestEmail } from '@/lib/email/mailer'
+import { accrueIfDue } from '@/lib/leave/balance'
 import { z } from 'zod'
 
 function log(level: 'info' | 'warn' | 'error', event: string, data?: object) {
@@ -122,7 +123,22 @@ export async function POST(req: Request) {
     const formResult = await handleFormRequest(userMessage, ctx.dept_id, dept.llmModel, formUser ?? undefined)
     if (formResult) {
       const { template, filled } = formResult
-      const replyText = "I've pre-filled the form below — review and submit when ready."
+
+      const isLeaveTemplate =
+        template.name.toLowerCase().includes('leave') ||
+        template.fields.some((f) => f.name === 'fromDate' || f.name === 'leaveType')
+
+      let replyText = "I've pre-filled the form below — review and submit when ready."
+      if (isLeaveTemplate) {
+        const { balance } = await accrueIfDue(ctx.user_id, ctx.dept_id)
+        const display = balance.toFixed(1)
+        const balanceNote =
+          balance < 0
+            ? `You currently have **${Math.abs(balance).toFixed(1)} days** of leave in deficit.`
+            : `You currently have **${display} day${Number(display) !== 1 ? 's' : ''}** of leave available.`
+        replyText = `${balanceNote}\n\nI've pre-filled the form below — review and submit when ready.`
+      }
+
       const sd = new StreamData()
       sd.append({ type: 'form', template, filled })
       const result = await streamText({

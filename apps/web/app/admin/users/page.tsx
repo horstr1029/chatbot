@@ -9,19 +9,32 @@ export default async function UsersPage() {
   const deptId = session.deptId
   if (!deptId) redirect('/chat')
 
-  const members = await prisma.userDepartment.findMany({
-    where: { deptId },
-    orderBy: { createdAt: 'asc' },
-    select: {
-      role: true,
-      createdAt: true,
-      user: { select: { id: true, name: true, email: true, deletedAt: true } },
-    },
-  })
+  const [members, leaveBalances] = await Promise.all([
+    prisma.userDepartment.findMany({
+      where: { deptId },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        role: true,
+        createdAt: true,
+        user: { select: { id: true, name: true, email: true, deletedAt: true } },
+      },
+    }),
+    prisma.leaveBalance.findMany({
+      where: { deptId },
+      select: { userId: true, balance: true, yearlyAllocation: true, monthlyAccrual: true },
+    }),
+  ])
+
+  const balanceMap = Object.fromEntries(leaveBalances.map((b) => [b.userId, b]))
 
   const users = members
     .filter((m) => !m.user.deletedAt)
-    .map((m) => ({ ...m.user, role: m.role, createdAt: m.createdAt }))
+    .map((m) => ({
+      ...m.user,
+      role: m.role,
+      createdAt: m.createdAt,
+      leaveBalance: balanceMap[m.user.id] ?? null,
+    }))
 
   return (
     <div>

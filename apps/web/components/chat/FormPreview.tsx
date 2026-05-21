@@ -85,6 +85,23 @@ export function FormPreview({ template, filled, onSubmit, onCancel }: FormPrevie
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </select>
+            ) : field.type === 'radio' ? (
+              <div className="flex flex-wrap gap-2">
+                {field.options?.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => handleChange(field.name, opt)}
+                    className={`px-3 py-1.5 rounded-full border text-[12px] font-medium transition-colors ${
+                      values[field.name] === opt
+                        ? 'bg-brand-600 border-brand-600 text-white'
+                        : 'border-border text-text-secondary hover:border-brand-600 hover:text-brand-600'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
             ) : (
               <input
                 type={field.type}

@@ -8,6 +8,7 @@ import { notifyUser } from '@/lib/push/webpush'
 import { sendWorkflowApprovalRequestEmail } from '@/lib/email/mailer'
 import { getDept } from '@/lib/dept/getDept'
 import { scheduleWorkflowReminder } from '@/lib/queue/reminder.queue'
+import { countWorkdays } from '@/lib/leave/balance'
 import { z } from 'zod'
 
 const bodySchema = z.object({
@@ -33,6 +34,22 @@ export const POST = withErrorHandler(async (req) => {
     .join(', ')
     .slice(0, 200)}`
 
+  const isLeaveTemplate =
+    template.name.toLowerCase().includes('leave') ||
+    Object.keys(body.values).some((k) => k === 'fromDate' || k === 'leaveType')
+
+  let leaveStartDate: Date | null = null
+  let leaveEndDate: Date | null = null
+  let leaveDays: number | null = null
+  let leaveType: string | null = null
+
+  if (isLeaveTemplate) {
+    leaveStartDate = body.values.fromDate ? new Date(body.values.fromDate) : null
+    leaveEndDate = body.values.toDate ? new Date(body.values.toDate) : null
+    leaveDays = leaveStartDate && leaveEndDate ? countWorkdays(leaveStartDate, leaveEndDate) : null
+    leaveType = body.values.leaveType ?? null
+  }
+
   const [wfRecord, requester] = await Promise.all([
     prisma.workflowRequest.create({
       data: {
@@ -43,6 +60,11 @@ export const POST = withErrorHandler(async (req) => {
         status: 'PENDING',
         deptId: ctx.dept_id,
         requestedById: ctx.user_id,
+        isLeaveRequest: isLeaveTemplate,
+        leaveStartDate,
+        leaveEndDate,
+        leaveDays,
+        leaveType,
       },
     }),
     prisma.user.findUnique({ where: { id: ctx.user_id }, select: { name: true, email: true } }),

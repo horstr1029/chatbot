@@ -275,6 +275,134 @@ export async function sendWorkflowApprovalRequestEmail(
   }
 }
 
+export async function sendLeaveApprovalEmail(
+  to: string,
+  name: string | null,
+  leaveType: string,
+  startDate: Date,
+  endDate: Date,
+  daysTaken: number,
+  daysRemaining: number,
+) {
+  const s = await getSmtpSettings()
+  if (!s.host || !s.user) return
+
+  const transport = await createTransport()
+  const from = s.from || `"MST Chatbot" <${s.user}>`
+  const displayName = escapeHtml(name ?? to)
+  const fmt = (d: Date) => d.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
+  const balanceColor = daysRemaining < 0 ? '#dc2626' : '#16a34a'
+
+  await transport.sendMail({
+    from,
+    to,
+    subject: 'Leave request approved',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family:'DM Sans',Arial,sans-serif;background:#f9fafb;margin:0;padding:32px;">
+        <div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:36px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:32px;height:32px;background:#f0fdf4;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:16px;">✅</span>
+            </div>
+            <h2 style="margin:0;font-size:18px;color:#111827;">Leave approved</h2>
+          </div>
+          <p style="margin:0 0 20px;font-size:14px;color:#4b5563;line-height:1.6;">
+            Hi ${displayName}, your leave request has been approved.
+          </p>
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px 20px;margin-bottom:24px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div>
+                <p style="margin:0 0 2px;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">Leave type</p>
+                <p style="margin:0;font-size:13px;color:#111827;font-weight:500;">${escapeHtml(leaveType)}</p>
+              </div>
+              <div>
+                <p style="margin:0 0 2px;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">Days taken</p>
+                <p style="margin:0;font-size:13px;color:#111827;font-weight:500;">${daysTaken} day${daysTaken !== 1 ? 's' : ''}</p>
+              </div>
+              <div>
+                <p style="margin:0 0 2px;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">From</p>
+                <p style="margin:0;font-size:13px;color:#111827;">${fmt(startDate)}</p>
+              </div>
+              <div>
+                <p style="margin:0 0 2px;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">To</p>
+                <p style="margin:0;font-size:13px;color:#111827;">${fmt(endDate)}</p>
+              </div>
+            </div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;">
+              <p style="margin:0 0 2px;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">Remaining balance</p>
+              <p style="margin:0;font-size:16px;font-weight:700;color:${balanceColor};">${daysRemaining.toFixed(1)} day${Math.abs(daysRemaining) !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+          <a href="${APP_URL}/chat" style="display:inline-block;padding:10px 20px;background:#111827;color:#ffffff;border-radius:6px;font-size:13px;font-weight:500;text-decoration:none;">Back to chat</a>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Hi ${displayName},\n\nYour leave request has been approved.\n\nLeave type: ${leaveType}\nFrom: ${fmt(startDate)}\nTo: ${fmt(endDate)}\nDays taken: ${daysTaken}\nRemaining balance: ${daysRemaining.toFixed(1)} days`,
+  })
+}
+
+export async function sendLeaveRejectionEmail(
+  to: string,
+  name: string | null,
+  leaveType: string,
+  startDate: Date,
+  endDate: Date,
+  reason: string,
+) {
+  const s = await getSmtpSettings()
+  if (!s.host || !s.user) return
+
+  const transport = await createTransport()
+  const from = s.from || `"MST Chatbot" <${s.user}>`
+  const displayName = escapeHtml(name ?? to)
+  const fmt = (d: Date) => d.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
+
+  await transport.sendMail({
+    from,
+    to,
+    subject: 'Leave request not approved',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family:'DM Sans',Arial,sans-serif;background:#f9fafb;margin:0;padding:32px;">
+        <div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:36px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:32px;height:32px;background:#fef2f2;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:16px;">❌</span>
+            </div>
+            <h2 style="margin:0;font-size:18px;color:#111827;">Leave not approved</h2>
+          </div>
+          <p style="margin:0 0 20px;font-size:14px;color:#4b5563;line-height:1.6;">
+            Hi ${displayName}, unfortunately your leave request was not approved.
+          </p>
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px 20px;margin-bottom:16px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div>
+                <p style="margin:0 0 2px;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">Leave type</p>
+                <p style="margin:0;font-size:13px;color:#111827;font-weight:500;">${escapeHtml(leaveType)}</p>
+              </div>
+              <div>
+                <p style="margin:0 0 2px;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">Dates</p>
+                <p style="margin:0;font-size:13px;color:#111827;">${fmt(startDate)} – ${fmt(endDate)}</p>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:14px 16px;margin-bottom:24px;">
+            <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#dc2626;text-transform:uppercase;letter-spacing:.05em;">Reason</p>
+            <p style="margin:0;font-size:13px;color:#111827;">${escapeHtml(reason)}</p>
+          </div>
+          <a href="${APP_URL}/chat" style="display:inline-block;padding:10px 20px;background:#111827;color:#ffffff;border-radius:6px;font-size:13px;font-weight:500;text-decoration:none;">Back to chat</a>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Hi ${displayName},\n\nYour leave request was not approved.\n\nLeave type: ${leaveType}\nDates: ${fmt(startDate)} – ${fmt(endDate)}\n\nReason: ${reason}`,
+  })
+}
+
 export async function sendWelcomeEmail(to: string, name: string | null, tempPassword: string) {
   const s = await getSmtpSettings()
   if (!s.host || !s.user) {

@@ -13,7 +13,7 @@ REMOTE_USER="horstr"
 REMOTE_HOST_PUBLIC="mstssh.gloworm.org.za"
 REMOTE_HOST_LOCAL="192.168.104.35"
 SSH_KEY="$HOME/.ssh/chatbot_deploy"
-PROJECT_DIR="$HOME/company-chatbot"
+PROJECT_DIR="/home/horstr/company-chatbot"
 APP_DIR="$PROJECT_DIR/apps/web"
 DB_URL="postgresql://chatbot:chatbot@localhost:5432/chatbot"
 
@@ -53,7 +53,7 @@ echo "[5/6] Copying static assets..."
 remote "cp -r $APP_DIR/.next/static $APP_DIR/.next/standalone/.next/static"
 
 echo "[6/6] Restarting app..."
-remote "pm2 restart chatbot-web --update-env"
+remote "pm2 startOrReload ecosystem.config.js --update-env"
 
 echo ""
 echo "Done. App status:"

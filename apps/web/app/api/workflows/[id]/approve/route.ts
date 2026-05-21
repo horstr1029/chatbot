@@ -7,7 +7,7 @@ import { n8nClient } from '@/lib/n8n/client'
 import { cancelWorkflowReminder } from '@/lib/queue/reminder.queue'
 import { notifyUser } from '@/lib/push/webpush'
 import { sendSlackNotification } from '@/lib/slack/notify'
-import { sendWorkflowApprovalRequestEmail } from '@/lib/email/mailer'
+import { sendWorkflowApprovalRequestEmail, sendLeaveApprovalEmail } from '@/lib/email/mailer'
 import { Errors } from '@/lib/errors'
 
 type RouteContext = { params: { id: string } }
@@ -90,40 +90,12 @@ export const POST = withErrorHandler(async (_req, ctx) => {
     await prisma.$transaction(async (tx) => {
       await tx.workflowRequest.update({
         where: { id: params.id },
-        data: {
-          status: 'APPROVED',
-          approvedById: authCtx.user_id,
-          approvedAt: new Date(),
-        },
+        data: { status: 'APPROVED', approvedById: authCtx.user_id, approvedAt: new Date() },
       })
     })
 
     await cancelWorkflowReminder(params.id)
-
-    await notifyUser(request.requestedById, {
-      title: 'Workflow approved',
-      body: request.description.slice(0, 100),
-      url: '/chat',
-    })
-
-    if (dept?.slackWebhookUrl) {
-      await sendSlackNotification(
-        dept.slackWebhookUrl,
-        `✅ *Workflow approved* in ${dept.name}\n>${request.description}\nApproved by ${approver?.email ?? 'admin'}`,
-      )
-    }
-
-    if (request.n8nResumeUrl) {
-      await n8nClient.resumeExecution(request.n8nResumeUrl, {
-        approved: true,
-        approvedBy: approver?.email ?? 'admin',
-      })
-      await prisma.workflowRequest.update({
-        where: { id: params.id },
-        data: { status: 'EXECUTED' },
-      })
-    }
-
+    await finalizeApproval(request, dept, approver?.email ?? 'admin')
     return apiResponse.success({ approved: true, allStepsComplete: true })
   }
 
@@ -133,16 +105,19 @@ export const POST = withErrorHandler(async (_req, ctx) => {
   await prisma.$transaction(async (tx) => {
     await tx.workflowRequest.update({
       where: { id: params.id },
-      data: {
-        status: 'APPROVED',
-        approvedById: authCtx.user_id,
-        approvedAt: new Date(),
-      },
+      data: { status: 'APPROVED', approvedById: authCtx.user_id, approvedAt: new Date() },
     })
   })
 
   await cancelWorkflowReminder(params.id)
+  await finalizeApproval(request, dept, approver?.email ?? 'admin')
+  return apiResponse.success({ approved: true })
+})
 
+type WorkflowReq = Awaited<ReturnType<typeof prisma.workflowRequest.findUnique>> & object
+type DeptInfo = { slackWebhookUrl: string | null; name: string } | null
+
+async function finalizeApproval(request: NonNullable<WorkflowReq>, dept: DeptInfo, approverEmail: string) {
   await notifyUser(request.requestedById, {
     title: 'Workflow approved',
     body: request.description.slice(0, 100),
@@ -152,20 +127,43 @@ export const POST = withErrorHandler(async (_req, ctx) => {
   if (dept?.slackWebhookUrl) {
     await sendSlackNotification(
       dept.slackWebhookUrl,
-      `✅ *Workflow approved* in ${dept.name}\n>${request.description}\nApproved by ${approver?.email ?? 'admin'}`,
+      `✅ *Workflow approved* in ${dept.name}\n>${request.description}\nApproved by ${approverEmail}`,
     )
   }
 
   if (request.n8nResumeUrl) {
-    await n8nClient.resumeExecution(request.n8nResumeUrl, {
-      approved: true,
-      approvedBy: approver?.email ?? 'admin',
-    })
-    await prisma.workflowRequest.update({
-      where: { id: params.id },
-      data: { status: 'EXECUTED' },
-    })
+    await n8nClient.resumeExecution(request.n8nResumeUrl, { approved: true, approvedBy: approverEmail })
+    await prisma.workflowRequest.update({ where: { id: request.id }, data: { status: 'EXECUTED' } })
   }
 
-  return apiResponse.success({ approved: true })
-})
+  if (request.isLeaveRequest && request.leaveDays != null) {
+    const requester = await prisma.user.findUnique({
+      where: { id: request.requestedById },
+      select: { email: true, name: true },
+    })
+
+    const leaveRecord = await prisma.leaveBalance.findUnique({
+      where: { userId_deptId: { userId: request.requestedById, deptId: request.deptId } },
+    })
+
+    if (leaveRecord) {
+      const newBalance = leaveRecord.balance - request.leaveDays
+      await prisma.leaveBalance.update({
+        where: { id: leaveRecord.id },
+        data: { balance: newBalance },
+      })
+
+      if (requester?.email && request.leaveStartDate && request.leaveEndDate) {
+        await sendLeaveApprovalEmail(
+          requester.email,
+          requester.name,
+          request.leaveType ?? 'Leave',
+          request.leaveStartDate,
+          request.leaveEndDate,
+          request.leaveDays,
+          newBalance,
+        )
+      }
+    }
+  }
+}
