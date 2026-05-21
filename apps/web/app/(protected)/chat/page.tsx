@@ -40,6 +40,7 @@ export default async function ChatPage() {
       deptId={dept.id}
       userName={displayName}
       userRole={session.role}
+      isSuperAdmin={session.isSuperAdmin ?? false}
       initials={initials}
       sessions={sessions}
       availableDepts={availableDepts}

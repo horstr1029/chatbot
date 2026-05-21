@@ -28,6 +28,7 @@ interface ChatInterfaceProps {
   deptId: string
   userName: string
   userRole: string
+  isSuperAdmin: boolean
   initials: string
   sessions: Pick<ChatSession, 'id' | 'title' | 'updatedAt'>[]
   availableDepts: DeptOption[]
@@ -55,6 +56,7 @@ export function ChatInterface({
   deptId,
   userName,
   userRole,
+  isSuperAdmin,
   initials,
   sessions: initialSessions,
   availableDepts,
@@ -330,6 +332,7 @@ export function ChatInterface({
         deptId={deptId}
         userName={userName}
         userRole={userRole}
+        isSuperAdmin={isSuperAdmin}
         sessions={sessions}
         activeSessionId={activeSessionId}
         onNewChat={handleNewChat}

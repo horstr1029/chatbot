@@ -5,7 +5,7 @@ import { SuperAdminNav } from '@/components/admin/SuperAdminNav'
 export default async function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session.isLoggedIn) redirect('/login')
-  if (session.role !== 'SUPER_ADMIN') redirect('/chat')
+  if (!session.isSuperAdmin && session.role !== 'SUPER_ADMIN') redirect('/chat')
 
   return (
     <div className="min-h-screen bg-surface-secondary">

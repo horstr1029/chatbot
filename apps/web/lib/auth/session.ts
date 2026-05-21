@@ -11,6 +11,7 @@ export interface SessionData {
   name: string
   email: string
   mustChangePassword: boolean
+  isSuperAdmin: boolean
 }
 
 const SESSION_SECRET = process.env.SESSION_SECRET

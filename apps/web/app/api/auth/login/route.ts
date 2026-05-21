@@ -38,13 +38,15 @@ export async function POST(req: Request) {
   session.name = user.name ?? user.email
   session.email = user.email
   session.deptIds = user.departments.map((d) => d.deptId)
+  session.isSuperAdmin = user.isSuperAdmin
 
   if (user.mustChangePassword) {
     await session.save()
     return NextResponse.json({ data: { redirect: '/change-password' }, error: null })
   }
 
-  if (user.isSuperAdmin) {
+  // Pure super admin (no dept) — send straight to superadmin panel
+  if (user.isSuperAdmin && user.departments.length === 0) {
     session.role = 'SUPER_ADMIN'
     session.deptId = null
     await session.save()
