@@ -32,13 +32,8 @@ function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
   onStar: (e: React.MouseEvent) => void
   onDelete: (e: React.MouseEvent) => void
 }) {
-  const [hovered, setHovered] = useState(false)
   return (
-    <div
-      className="flex items-center gap-0.5 mb-0.5"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <div className="flex items-center gap-0.5 mb-0.5">
       <button
         onClick={onSelect}
         className={`flex items-center gap-2 flex-1 min-w-0 pl-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
@@ -52,8 +47,7 @@ function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
       </button>
       <button
         onClick={onDelete}
-        title="Delete"
-        style={{ opacity: hovered ? 1 : 0 }}
+        title="Delete chat"
         className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
       >
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,7 +57,6 @@ function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
       <button
         onClick={onStar}
         title={starred ? 'Unstar' : 'Star'}
-        style={{ opacity: hovered || starred ? 1 : 0 }}
         className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded transition-colors ${
           starred ? 'text-amber-400' : 'text-text-muted hover:text-amber-400'
         }`}
