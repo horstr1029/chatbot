@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import type { DeptRole } from '@prisma/client'
 import type { UserRole } from '@/lib/auth/types'
@@ -198,8 +198,8 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
             </thead>
             <tbody className="divide-y divide-border">
               {users.map((u) => (
-                <>
-                  <tr key={u.id} className="hover:bg-surface-secondary transition-colors">
+                <Fragment key={u.id}>
+                  <tr className="hover:bg-surface-secondary transition-colors">
                     <td className="px-4 py-3 text-[13px] text-text-primary font-medium">{u.name ?? '—'}</td>
                     <td className="px-4 py-3 text-[13px] text-text-secondary">{u.email}</td>
                     <td className="px-4 py-3">
@@ -309,7 +309,7 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
