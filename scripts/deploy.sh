@@ -37,6 +37,9 @@ echo "  Company Chatbot — Deploy"
 echo "  Target: $REMOTE_USER@$REMOTE_HOST"
 echo ""
 
+echo "[0/6] Pushing local commits to GitHub..."
+git push origin main
+
 echo "[1/6] Pulling latest code..."
 remote "git pull origin main"
 
