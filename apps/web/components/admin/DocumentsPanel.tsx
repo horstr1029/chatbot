@@ -49,8 +49,11 @@ function toDateInputValue(expiresAt: Date | null): string {
   return `${yyyy}-${mm}-${dd}`
 }
 
+const PAGE_SIZE = 10
+
 export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
   const router = useRouter()
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState<string | null>(null)
   const [syncStatus, setSyncStatus] = useState<Record<string, 'syncing' | 'done' | 'error'>>({})
   const [adding, setAdding] = useState(false)
@@ -156,7 +159,7 @@ export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {sources.map((s) => {
+              {sources.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((s) => {
                 const status = syncStatus[s.id]
                 const canSync = s.sourceType !== 'LOCAL'
                 const isEditingExpiry = editingExpiry === s.id
@@ -238,6 +241,38 @@ export function DocumentsPanel({ deptId, sources }: DocumentsPanelProps) {
               })}
             </tbody>
           </table>
+        )}
+        {sources.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-surface-secondary">
+            <p className="text-[12px] text-text-muted">
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, sources.length)} of {sources.length}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-2.5 py-1 rounded text-[12px] text-text-secondary border border-border hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                ← Prev
+              </button>
+              {Array.from({ length: Math.ceil(sources.length / PAGE_SIZE) }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setPage(n)}
+                  className={`w-7 h-7 rounded text-[12px] border transition-colors ${n === page ? 'bg-gray-900 text-white border-gray-900' : 'border-border text-text-secondary hover:bg-white'}`}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(Math.ceil(sources.length / PAGE_SIZE), p + 1))}
+                disabled={page === Math.ceil(sources.length / PAGE_SIZE)}
+                className="px-2.5 py-1 rounded text-[12px] text-text-secondary border border-border hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
