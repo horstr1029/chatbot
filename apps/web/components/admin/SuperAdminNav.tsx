@@ -10,7 +10,6 @@ const links = [
   { href: '/superadmin/managers', label: 'Managers' },
   { href: '/superadmin/analytics', label: 'Analytics' },
   { href: '/superadmin/settings', label: 'Settings' },
-  { href: '/admin', label: '← Back to dept admin' },
 ]
 
 export function SuperAdminNav() {
