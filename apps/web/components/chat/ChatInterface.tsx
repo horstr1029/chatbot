@@ -171,7 +171,7 @@ export function ChatInterface({
     }
     const latestAssistant = [...messages].reverse().find((m) => m.role === 'assistant')
     if (!latestAssistant) return  // messages not yet updated — will retry when messages changes
-    setFormDataMap((prev) => ({ ...prev, [latestAssistant.id]: formItem as FormData }))
+    setFormDataMap((prev) => ({ ...prev, [latestAssistant.id]: formItem as unknown as FormData }))
     processedStreamDataLengthRef.current = chatStreamData.length
   }, [chatStreamData, messages])
 
