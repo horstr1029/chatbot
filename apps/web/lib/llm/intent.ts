@@ -28,7 +28,19 @@ Rules:
 Message: "${message}"
 Respond with only the classification label, nothing else.`
 
+const LEAVE_BALANCE_KEYWORDS = [
+  'leave balance', 'leave days', 'days of leave', 'days leave',
+  'leave available', 'leave remaining', 'leave entitlement', 'my leave',
+]
+
+function quickLeaveBalanceCheck(message: string): boolean {
+  const lower = message.toLowerCase()
+  return LEAVE_BALANCE_KEYWORDS.some((kw) => lower.includes(kw))
+}
+
 export async function detectIntent(message: string, dept: Department): Promise<Intent> {
+  if (quickLeaveBalanceCheck(message)) return 'LEAVE_BALANCE_QUERY'
+
   const { client } = getLLMClient(dept)
 
   const res = await client.chat.completions.create({
