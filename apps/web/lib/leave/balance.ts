@@ -17,9 +17,9 @@ export function countWorkdays(start: Date, end: Date): number {
 export async function getOrCreateBalance(userId: string, deptId: string) {
   return prisma.leaveBalance.upsert({
     where: { userId_deptId: { userId, deptId } },
-    // New records start with the yearly allocation and mark this month as accrued
-    // so the first monthly increment happens next month, not immediately.
-    create: { userId, deptId, balance: 15, lastAccrualDate: new Date() },
+    // balance and lastAccrualDate left as defaults (0, null) so accrueIfDue
+    // initializes them to yearlyAllocation on first call.
+    create: { userId, deptId },
     update: {},
   })
 }
@@ -30,8 +30,16 @@ export async function accrueIfDue(userId: string, deptId: string): Promise<{ bal
   const now = new Date()
   const last = record.lastAccrualDate
 
+  // First-time init: grant yearly allocation as starting balance
+  if (!last) {
+    const updated = await prisma.leaveBalance.update({
+      where: { id: record.id },
+      data: { balance: record.yearlyAllocation, lastAccrualDate: now },
+    })
+    return { balance: updated.balance, accrued: true }
+  }
+
   const shouldAccrue =
-    !last ||
     last.getFullYear() < now.getFullYear() ||
     (last.getFullYear() === now.getFullYear() && last.getMonth() < now.getMonth())
 
