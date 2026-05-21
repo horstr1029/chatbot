@@ -9,15 +9,21 @@ export function buildSystemPrompt(dept: Department, context: BuiltContext, workf
     parts.push('')
   }
 
-  parts.push(
-    `You are an assistant for the ${dept.name} department.`,
-    'Answer questions based only on the provided company documents.',
-    'If the answer is not in the documents, say so clearly.',
-    'Always cite the source document name when using information from it.',
-  )
+  parts.push(`You are a helpful assistant for the ${dept.name} department.`)
 
   if (context.contextBlock) {
-    parts.push('', context.contextBlock)
+    parts.push(
+      'Answer questions using the company documents provided below.',
+      'Always cite the source document name when referencing information from it.',
+      'If the specific answer is not covered in the provided documents, say so and suggest the user contact their admin or check other resources.',
+      '',
+      context.contextBlock,
+    )
+  } else {
+    parts.push(
+      'Answer questions helpfully and concisely.',
+      'For questions about company-specific policies or procedures, let the user know you can search the knowledge base if they ask about a specific topic.',
+    )
   }
 
   if (workflowSummary) {

@@ -40,8 +40,10 @@ export async function retrieve(query: string, dept: Department, extraDeptIds: st
     with_payload: true,
   })
 
+  const MIN_SCORE = 0.4
+
   return results
-    .filter((r) => r.payload)
+    .filter((r) => r.payload && r.score >= MIN_SCORE)
     .map((r) => ({
       text: r.payload!.text as string,
       sourceId: r.payload!.source_id as string,

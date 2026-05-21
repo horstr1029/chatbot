@@ -9,7 +9,7 @@ const PROMPT = (message: string) =>
   `Classify the user message below into exactly one of: DOC_QUESTION, WORKFLOW_REQUEST, FORM_REQUEST, REMINDER_REQUEST, CROSS_DEPT_REQUEST, LEAVE_BALANCE_QUERY, GENERAL_CHAT.
 
 Definitions:
-- DOC_QUESTION: asking about, searching for, or listing company documents, files, policies, or information stored in the knowledge base (e.g. "what documents do you have?", "show me the HR policy", "what files are available?", "find the leave application form")
+- DOC_QUESTION: any question about company-specific topics, policies, procedures, rules, equipment, products, guidelines, or information that would likely be found in the company knowledge base (e.g. "what is the leave policy?", "how do I request equipment?", "what are the safety procedures?", "show me the HR policy", "what documents are available?", "explain the onboarding process", "what are the working hours?")
 - WORKFLOW_REQUEST: explicitly asking to automate, build, create, trigger, or run a process or workflow (e.g. "create an onboarding workflow", "automate my leave request", "set up a reminder process")
 - FORM_REQUEST: asking to fill in, submit, or complete a form or application (e.g. "submit a leave request", "fill in the expense form", "I need to request leave", "I want to apply for", "submit a request for", "apply for leave")
 - REMINDER_REQUEST: asking to set up a recurring reminder or scheduled check (e.g. "remind me every Monday", "send me a weekly summary", "alert me on the 1st of each month", "notify me daily at 9am")
@@ -18,7 +18,7 @@ Definitions:
 - GENERAL_CHAT: greetings, thank-you, off-topic, clarifications, or anything that doesn't fit the above
 
 Rules:
-- Questions about WHAT documents exist are DOC_QUESTION, not WORKFLOW_REQUEST or FORM_REQUEST
+- Default to DOC_QUESTION for any question about company topics, policies, products, procedures, or anything that might be in a knowledge base
 - Only classify as WORKFLOW_REQUEST if the user explicitly asks to build or automate something
 - Classify as FORM_REQUEST if the user wants to submit or fill a concrete request or application
 - Classify as REMINDER_REQUEST only if the user wants a recurring/scheduled notification — not a one-off reminder
