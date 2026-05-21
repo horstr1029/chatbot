@@ -51,7 +51,7 @@ async function warmChatModel(model: string) {
     await fetch(`${base}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages: [], keep_alive: '10m' }),
+      body: JSON.stringify({ model, messages: [], keep_alive: '60m' }),
       signal: AbortSignal.timeout(5_000),
     })
   } catch {
