@@ -35,6 +35,12 @@ export function SuperAdminNav() {
             </Link>
           ))}
         </nav>
+        <Link
+          href="/chat"
+          className="px-3 py-1.5 rounded-md text-[13px] text-text-secondary hover:bg-surface-tertiary transition-colors"
+        >
+          ← Chat
+        </Link>
         <LogoutButton />
       </div>
     </header>
