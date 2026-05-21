@@ -81,6 +81,43 @@ def upsert_chunks(
     client.upsert(collection_name=COLLECTION, points=points)
 
 
+def upsert_image_chunks(
+    images: list[dict],  # list of {description, image_base64, media_type, page_number}
+    vectors: list[list[float]],
+    source_id: str,
+    source_name: str,
+    source_url: str | None,
+    dept_ids: list[str],
+) -> None:
+    """Store image chunks — description is the embeddable text; image_base64 is returned on retrieval."""
+    client = _client()
+    now = datetime.now(timezone.utc).isoformat()
+
+    points = [
+        PointStruct(
+            id=str(uuid.uuid4()),
+            vector=vector,
+            payload={
+                "text": img["description"],
+                "image_base64": img["image_base64"],
+                "image_media_type": img.get("media_type", "image/png"),
+                "element_type": "Image",
+                "source_id": source_id,
+                "source_name": source_name,
+                "source_url": source_url or "",
+                "dept_ids": dept_ids,
+                "chunk_index": img.get("page_number", 0),
+                "modified_at": now,
+            },
+        )
+        for img, vector in zip(images, vectors)
+        if vector and img.get("description")
+    ]
+
+    if points:
+        client.upsert(collection_name=COLLECTION, points=points)
+
+
 def delete_by_source(source_id: str) -> None:
     client = _client()
     client.delete(

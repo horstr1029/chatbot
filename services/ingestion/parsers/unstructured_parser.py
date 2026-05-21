@@ -1,10 +1,9 @@
-import io
 import tempfile
 import os
 from typing import NamedTuple, TypedDict
 
 from unstructured.partition.auto import partition
-from unstructured.documents.elements import Title, Table, Element
+from unstructured.documents.elements import Title, Table, Image, Element
 
 
 class ParsedElement(TypedDict):
@@ -13,11 +12,18 @@ class ParsedElement(TypedDict):
     element_type: str  # "Title", "NarrativeText", "Table", etc.
 
 
+class ExtractedImage(TypedDict):
+    image_base64: str
+    media_type: str
+    page_number: int
+
+
 class ParseResult(NamedTuple):
     text: str
     tables: list[str]
     elements: list[ParsedElement]
     page_count: int
+    images: list[ExtractedImage]
 
 
 def parse_bytes(file_bytes: bytes, file_name: str) -> ParseResult:
@@ -28,21 +34,36 @@ def parse_bytes(file_bytes: bytes, file_name: str) -> ParseResult:
         tmp_path = tmp.name
 
     try:
-        elements: list[Element] = partition(filename=tmp_path)
+        elements: list[Element] = partition(
+            filename=tmp_path,
+            extract_images_in_pdf=True,
+            infer_table_structure=True,
+        )
     finally:
         os.unlink(tmp_path)
 
     text_parts: list[str] = []
     table_parts: list[str] = []
     parsed_elements: list[ParsedElement] = []
+    extracted_images: list[ExtractedImage] = []
     max_page = 0
 
     for el in elements:
-        page_num: int = getattr(getattr(el, "metadata", None), "page_number", None) or 0
+        meta = getattr(el, "metadata", None)
+        page_num: int = getattr(meta, "page_number", None) or 0
         if page_num > max_page:
             max_page = page_num
 
-        if isinstance(el, Table):
+        if isinstance(el, Image):
+            b64 = getattr(meta, "image_base64", None)
+            if b64:
+                mime = getattr(meta, "image_mime_type", None) or "image/png"
+                extracted_images.append({
+                    "image_base64": b64,
+                    "media_type": mime,
+                    "page_number": page_num,
+                })
+        elif isinstance(el, Table):
             md = _table_to_markdown(el)
             if md:
                 table_parts.append(md)
@@ -60,6 +81,7 @@ def parse_bytes(file_bytes: bytes, file_name: str) -> ParseResult:
         tables=table_parts,
         elements=parsed_elements,
         page_count=max_page,
+        images=extracted_images,
     )
 
 

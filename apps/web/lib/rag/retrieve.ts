@@ -9,6 +9,8 @@ export type RetrievedChunk = {
   sourceUrl: string
   chunkIndex: number
   score: number
+  imageBase64?: string
+  imageMediaType?: string
 }
 
 const COLLECTION = 'company_docs'
@@ -51,5 +53,7 @@ export async function retrieve(query: string, dept: Department, extraDeptIds: st
       sourceUrl: r.payload!.source_url as string,
       chunkIndex: r.payload!.chunk_index as number,
       score: r.score,
+      imageBase64: r.payload!.image_base64 as string | undefined,
+      imageMediaType: r.payload!.image_media_type as string | undefined,
     }))
 }

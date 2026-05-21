@@ -8,7 +8,8 @@ from pydantic import BaseModel
 from chunker import chunk_text, split_into_chapters, PAGE_SPLIT_THRESHOLD
 from embedder import embed_texts
 from parsers.unstructured_parser import parse_bytes
-from qdrant_store import delete_by_source, ensure_collection, upsert_chunks
+from qdrant_store import delete_by_source, ensure_collection, upsert_chunks, upsert_image_chunks
+from image_describer import describe_image
 
 logger = logging.getLogger("ingestion")
 
@@ -98,19 +99,26 @@ def parse(req: ParseRequest):
         return ParseResponse(source_id=req.source_id, chunks_upserted=total_chunks, splits=len(splits))
 
     chunks = chunk_text(parse_result.text)
-    if not chunks:
-        return ParseResponse(source_id=req.source_id, chunks_upserted=0)
+    if chunks:
+        vectors = embed_texts([c["text"] for c in chunks])
+        upsert_chunks(
+            chunks=chunks,
+            vectors=vectors,
+            source_id=req.source_id,
+            source_name=req.source_name,
+            source_url=req.source_url,
+            dept_ids=req.dept_ids,
+        )
+        total_chunks = len(chunks)
 
-    vectors = embed_texts([c["text"] for c in chunks])
-    upsert_chunks(
-        chunks=chunks,
-        vectors=vectors,
+    # Extract and store image chunks
+    total_chunks += _process_images(
+        parse_result.images,
         source_id=req.source_id,
         source_name=req.source_name,
         source_url=req.source_url,
         dept_ids=req.dept_ids,
     )
-    total_chunks = len(chunks)
 
     return ParseResponse(source_id=req.source_id, chunks_upserted=total_chunks)
 
@@ -168,19 +176,25 @@ def resync(req: ResyncRequest):
                         total_chunks += len(chunks)
                 else:
                     chunks = chunk_text(parse_result.text)
-                    if not chunks:
-                        continue
-                    vectors = embed_texts([c["text"] for c in chunks])
-                    upsert_chunks(
-                        chunks=chunks,
-                        vectors=vectors,
+                    if chunks:
+                        vectors = embed_texts([c["text"] for c in chunks])
+                        upsert_chunks(
+                            chunks=chunks,
+                            vectors=vectors,
+                            source_id=req.source_id,
+                            source_name=req.source_name,
+                            source_url=f.get("webViewLink"),
+                            dept_ids=req.dept_ids,
+                            file_name=f["name"],
+                        )
+                        total_chunks += len(chunks)
+                    total_chunks += _process_images(
+                        parse_result.images,
                         source_id=req.source_id,
                         source_name=req.source_name,
                         source_url=f.get("webViewLink"),
                         dept_ids=req.dept_ids,
-                        file_name=f["name"],
                     )
-                    total_chunks += len(chunks)
 
                 files_processed += 1
             except Exception as e:
@@ -205,6 +219,41 @@ def resync(req: ResyncRequest):
 def delete_source(source_id: str):
     delete_by_source(source_id)
     return {"deleted": source_id}
+
+
+def _process_images(
+    images: list,
+    source_id: str,
+    source_name: str,
+    source_url: str | None,
+    dept_ids: list[str],
+) -> int:
+    """Describe images via Claude vision, embed descriptions, store in Qdrant."""
+    if not images:
+        return 0
+
+    described = []
+    for img in images:
+        desc = describe_image(img["image_base64"], img.get("media_type", "image/png"))
+        if desc:
+            described.append({**img, "description": desc})
+        else:
+            logger.debug("Skipped image on page %d — no description", img.get("page_number", 0))
+
+    if not described:
+        return 0
+
+    vectors = embed_texts([d["description"] for d in described])
+    upsert_image_chunks(
+        images=described,
+        vectors=vectors,
+        source_id=source_id,
+        source_name=source_name,
+        source_url=source_url,
+        dept_ids=dept_ids,
+    )
+    logger.info("Stored %d image chunks from %s", len(described), source_name)
+    return len(described)
 
 
 def _extract_drive_folder_id(url: str) -> str:

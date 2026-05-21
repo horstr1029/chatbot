@@ -4,7 +4,9 @@ export type CitationSource = {
   id: string
   name: string
   url: string
-  text: string   // first/best chunk text for preview
+  text: string
+  imageBase64?: string
+  imageMediaType?: string
 }
 
 export type BuiltContext = {
@@ -29,6 +31,8 @@ export function buildContext(chunks: RetrievedChunk[]): BuiltContext {
         name: chunk.sourceName,
         url: chunk.sourceUrl,
         text: chunk.text,
+        imageBase64: chunk.imageBase64,
+        imageMediaType: chunk.imageMediaType,
       })
     }
     return `[${i + 1}] Source: ${chunk.sourceName}\n${chunk.text}`
