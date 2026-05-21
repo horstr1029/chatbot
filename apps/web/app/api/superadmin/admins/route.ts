@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db/client'
 import { deptMiddleware, requireRole } from '@/lib/auth/middleware'
 import { apiResponse, withErrorHandler } from '@/lib/api/response'
+import { auditLog } from '@/lib/audit/log'
+import { getSession } from '@/lib/auth/session'
 
 const addSchema = z.object({ email: z.string().email() })
 
@@ -23,6 +25,9 @@ export const POST = withErrorHandler(async (req: Request) => {
     data: { isSuperAdmin: true },
     select: { id: true, name: true, email: true, createdAt: true },
   })
+
+  const session = await getSession()
+  await auditLog({ userId: ctx.user_id, userEmail: session.email ?? '', action: 'SUPERADMIN_GRANTED', targetId: user.id, targetType: 'User', meta: { targetEmail: user.email } })
 
   return apiResponse.success(updated)
 })

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db/client'
 import { deptMiddleware, requireRole } from '@/lib/auth/middleware'
 import { apiResponse, withErrorHandler } from '@/lib/api/response'
 import { getSession } from '@/lib/auth/session'
+import { auditLog } from '@/lib/audit/log'
 
 export const DELETE = withErrorHandler(async (req: Request, ctx: unknown) => {
   const { id } = (ctx as { params: { id: string } }).params
@@ -21,6 +22,7 @@ export const DELETE = withErrorHandler(async (req: Request, ctx: unknown) => {
   if (!user.isSuperAdmin) return apiResponse.error('CONFLICT', 'User is not a super admin.')
 
   await prisma.user.update({ where: { id }, data: { isSuperAdmin: false } })
+  await auditLog({ userId: authCtx.user_id, userEmail: session.email ?? '', action: 'SUPERADMIN_REVOKED', targetId: id, targetType: 'User', meta: { targetEmail: user.email } })
 
   return apiResponse.success({ id })
 })

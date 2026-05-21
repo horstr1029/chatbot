@@ -293,6 +293,24 @@ const FEATURES = [
     title: 'Keyboard shortcuts',
     desc: 'Ctrl+K — new chat · Ctrl+F — search conversation · Ctrl+/ — toggle this help panel · Esc — close any open panel. All shortcuts work from anywhere in the chat view.',
   },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    ),
+    title: 'Escalate to manager',
+    desc: 'If a conversation needs human attention, click the warning icon (desktop) or use More → Escalate to manager (mobile). Add an optional note and your manager receives an email with the full conversation transcript.',
+  },
+  {
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+      </svg>
+    ),
+    title: 'Multi-language support',
+    desc: 'Write in any language and the AI will respond in the same language — Afrikaans, Zulu, French, Spanish, and more. No configuration needed; language detection is automatic.',
+  },
 ]
 
 const FOLDER_STRUCTURE = `Google Drive / SharePoint root

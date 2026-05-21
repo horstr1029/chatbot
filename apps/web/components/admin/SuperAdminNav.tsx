@@ -12,6 +12,7 @@ const links = [
   { href: '/superadmin/managers', label: 'Managers' },
   { href: '/superadmin/admins', label: 'Admins' },
   { href: '/superadmin/analytics', label: 'Analytics' },
+  { href: '/superadmin/audit', label: 'Audit Log' },
   { href: '/superadmin/settings', label: 'Settings' },
 ]
 

@@ -20,6 +20,7 @@ model Department {
   widgetTokenExpiresAt DateTime?
   slackWebhookUrl      String?
   webSearchEnabled     Boolean  @default(false)
+  personaName          String?
   approvalChain   Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -263,6 +264,18 @@ enum CrossDeptStatus {
   IN_PROGRESS
   RESOLVED
   CANCELLED
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  userEmail  String
+  action     String
+  targetId   String?
+  targetType String?
+  meta       Json?
+  deptId     String?
+  createdAt  DateTime @default(now())
 }
 
 model LeaveBalance {

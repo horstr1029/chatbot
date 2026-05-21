@@ -32,6 +32,7 @@ interface ChatInterfaceProps {
   initials: string
   sessions: Pick<ChatSession, 'id' | 'title' | 'updatedAt'>[]
   availableDepts: DeptOption[]
+  personaName?: string
 }
 
 type StoredMessage = { id: string; role: 'user' | 'assistant'; content: string }
@@ -51,6 +52,7 @@ const SUGGESTED_QUESTIONS = (deptName: string) => [
   `How do I submit an expense claim?`,
   `Create a wiring diagram for a door access control system`,
   `Draw a flowchart for the ${deptName} approval process`,
+  `Verduidelik die verlofbeleid vir ${deptName}`,
 ]
 
 export function ChatInterface({
@@ -62,6 +64,7 @@ export function ChatInterface({
   initials,
   sessions: initialSessions,
   availableDepts,
+  personaName,
 }: ChatInterfaceProps) {
   const [sessions, setSessions] = useState(initialSessions)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
@@ -80,6 +83,10 @@ export function ChatInterface({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const moreMenuRef = useRef<HTMLDivElement>(null)
+  const [escalateOpen, setEscalateOpen] = useState(false)
+  const [escalateNote, setEscalateNote] = useState('')
+  const [escalateSending, setEscalateSending] = useState(false)
+  const [escalateSent, setEscalateSent] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchMatchIndex, setSearchMatchIndex] = useState(0)
@@ -270,6 +277,20 @@ export function ChatInterface({
     sessionIdRef.current = null
   }
 
+  async function handleEscalate() {
+    if (!sessionIdRef.current || escalateSending) return
+    setEscalateSending(true)
+    await fetch('/api/chat/escalate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: sessionIdRef.current, note: escalateNote }),
+    })
+    setEscalateSending(false)
+    setEscalateSent(true)
+    setEscalateNote('')
+    setTimeout(() => { setEscalateSent(false); setEscalateOpen(false) }, 2000)
+  }
+
   function handleSubmit() {
     if (!input.trim() || isLoading) return
     append({ role: 'user', content: input })
@@ -414,6 +435,13 @@ export function ChatInterface({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
+          {messages.length > 0 && sessionIdRef.current && (
+            <button onClick={() => setEscalateOpen(true)} title="Escalate to manager" className="hidden sm:flex w-7 h-7 items-center justify-center rounded-md border border-border text-text-muted hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </button>
+          )}
           {userRole === 'MANAGER' && (
             <a href="/admin" className="hidden sm:inline-flex text-[11px] font-medium px-2 py-1 rounded bg-brand-50 text-brand-600 border border-brand-100 hover:bg-brand-100 transition-colors">
               Admin
@@ -469,6 +497,12 @@ export function ChatInterface({
                   <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   Cross-dept request
                 </button>
+                {messages.length > 0 && sessionIdRef.current && (
+                  <button onClick={() => { setEscalateOpen(true); setMoreMenuOpen(false) }} className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-amber-600 hover:bg-amber-50 transition-colors">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    Escalate to manager
+                  </button>
+                )}
                 {messages.length > 0 && (
                   <button onClick={() => { exportChat(); setMoreMenuOpen(false) }} className="flex items-center gap-3 w-full px-4 py-2.5 text-[13px] text-text-secondary hover:bg-surface-secondary transition-colors">
                     <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -528,6 +562,7 @@ export function ChatInterface({
                 content={m.content}
                 citations={m.role === 'assistant' ? (citationsMap[m.id] ?? []) : []}
                 initials={initials}
+                personaName={personaName}
                 isStreaming={isLoading && m.id === messages.at(-1)?.id && m.role === 'assistant'}
                 messageId={m.id}
                 sessionId={sessionIdRef.current ?? undefined}
@@ -579,7 +614,7 @@ export function ChatInterface({
             </div>
           ))}
 
-          {isLoading && messages.at(-1)?.role === 'user' && <TypingIndicator />}
+          {isLoading && messages.at(-1)?.role === 'user' && <TypingIndicator personaName={personaName} />}
           <div ref={messagesEndRef} />
         </div>
 
@@ -619,6 +654,40 @@ export function ChatInterface({
       />
       <RemindersPanel open={remindersOpen} onClose={() => setRemindersOpen(false)} />
       <CrossDeptModal open={crossDeptOpen} onClose={() => setCrossDeptOpen(false)} />
+
+      {/* Escalate to manager modal */}
+      {escalateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-xl border border-border shadow-xl w-full max-w-sm p-5">
+            <h3 className="text-[14px] font-semibold text-text-primary mb-1">Escalate to manager</h3>
+            <p className="text-[12px] text-text-muted mb-4">
+              Your manager will receive this conversation by email. Add an optional note explaining what you need help with.
+            </p>
+            <textarea
+              rows={3}
+              value={escalateNote}
+              onChange={(e) => setEscalateNote(e.target.value)}
+              placeholder="Optional note for your manager..."
+              className="w-full rounded-md border border-border px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600 resize-none mb-4"
+            />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleEscalate}
+                disabled={escalateSending || escalateSent}
+                className="flex-1 py-2 rounded-md bg-amber-500 text-white text-[13px] font-medium hover:bg-amber-600 disabled:opacity-60 transition-colors"
+              >
+                {escalateSent ? 'Sent!' : escalateSending ? 'Sending…' : 'Send to manager'}
+              </button>
+              <button
+                onClick={() => { setEscalateOpen(false); setEscalateNote('') }}
+                className="px-4 py-2 rounded-md border border-border text-[13px] text-text-secondary hover:bg-surface-secondary transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

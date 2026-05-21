@@ -12,6 +12,7 @@ interface DeptConfig {
   widgetToken: string | null
   slackWebhookUrl: string | null
   webSearchEnabled: boolean
+  personaName: string | null
 }
 
 interface ApprovalChainStep {
@@ -121,6 +122,7 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
     embedModel: dept.embedModel,
     slackWebhookUrl: dept.slackWebhookUrl ?? '',
     webSearchEnabled: dept.webSearchEnabled,
+    personaName: dept.personaName ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -130,7 +132,8 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
     form.llmModel !== dept.llmModel ||
     form.embedModel !== dept.embedModel ||
     form.slackWebhookUrl !== (dept.slackWebhookUrl ?? '') ||
-    form.webSearchEnabled !== dept.webSearchEnabled
+    form.webSearchEnabled !== dept.webSearchEnabled ||
+    form.personaName !== (dept.personaName ?? '')
 
   async function handleSave() {
     setSaving(true)
@@ -238,6 +241,22 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="bg-white border border-border rounded-lg p-5 space-y-3">
+        <div>
+          <p className="text-[13px] font-semibold text-text-primary">AI Persona</p>
+          <p className="text-[12px] text-text-muted mt-0.5">
+            The name shown in chat bubbles. Defaults to "{dept.name} Assistant" if left blank.
+          </p>
+        </div>
+        <input
+          value={form.personaName}
+          onChange={(e) => setForm((f) => ({ ...f, personaName: e.target.value }))}
+          maxLength={40}
+          placeholder={`${dept.name} Assistant`}
+          className="w-full rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
+        />
       </div>
 
       <div className="bg-white border border-border rounded-lg p-5 space-y-3">

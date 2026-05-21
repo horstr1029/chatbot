@@ -4,6 +4,8 @@ import { apiResponse, withErrorHandler } from '@/lib/api/response'
 import { invalidateDept, getDept } from '@/lib/dept/getDept'
 import { Errors } from '@/lib/errors'
 import { z } from 'zod'
+import { auditLog } from '@/lib/audit/log'
+import { getSession } from '@/lib/auth/session'
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -12,6 +14,7 @@ const updateSchema = z.object({
   embedModel: z.string().optional(),
   slackWebhookUrl: z.string().url().or(z.literal('')).optional().nullable(),
   webSearchEnabled: z.boolean().optional(),
+  personaName: z.string().max(40).optional().nullable(),
 })
 
 type RouteContext = { params: { id: string } }
@@ -42,6 +45,8 @@ export const PUT = withErrorHandler(async (req, ctx) => {
 
   const dept = await prisma.department.update({ where: { id: params.id }, data: body })
   await invalidateDept(params.id)
+  const session = await getSession()
+  await auditLog({ userId: authCtx.user_id, userEmail: session.email ?? '', action: 'DEPT_SETTINGS_SAVED', targetId: params.id, targetType: 'Department', deptId: params.id, meta: { fields: Object.keys(body) } })
 
   return apiResponse.success(dept)
 })

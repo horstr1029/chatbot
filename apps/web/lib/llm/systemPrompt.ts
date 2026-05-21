@@ -51,7 +51,9 @@ export function buildSystemPrompt(dept: Department, context: BuiltContext, workf
     parts.push('')
   }
 
-  parts.push(`You are a helpful assistant for the ${dept.name} department.`)
+  const persona = dept.personaName?.trim() || `${dept.name} Assistant`
+  parts.push(`You are ${persona}, the AI assistant for the ${dept.name} department.`)
+  parts.push('Detect the language the user writes in and always respond in that same language.')
 
   if (context.contextBlock) {
     parts.push(

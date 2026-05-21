@@ -470,3 +470,58 @@ export async function sendWelcomeEmail(to: string, name: string | null, tempPass
     text: `Welcome ${displayName},\n\nYour account has been created.\n\nLogin: ${APP_URL}/login\nEmail: ${to}\nTemporary password: ${tempPassword}\n\nYou will be asked to change your password on first login.`,
   })
 }
+
+export async function sendEscalationEmail(params: {
+  to: string
+  managerName: string | null
+  fromUserName: string
+  deptName: string
+  note: string
+  transcript: { role: string; content: string }[]
+}) {
+  const s = await getSmtpSettings()
+  if (!s.host || !s.user) return
+
+  const transport = await createTransport()
+  const from = s.from || `"MST Chatbot" <${s.user}>`
+  const { to, managerName, fromUserName, deptName, note, transcript } = params
+
+  const transcriptHtml = transcript
+    .map((m) => {
+      const label = m.role === 'user' ? escapeHtml(fromUserName) : deptName + ' AI'
+      const bg = m.role === 'user' ? '#eff6ff' : '#f9fafb'
+      const border = m.role === 'user' ? '#bfdbfe' : '#e5e7eb'
+      return `<div style="margin:0 0 10px;padding:10px 14px;background:${bg};border:1px solid ${border};border-radius:8px;">
+        <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;">${label}</p>
+        <p style="margin:0;font-size:13px;color:#111827;white-space:pre-wrap;">${escapeHtml(m.content.slice(0, 600))}${m.content.length > 600 ? '…' : ''}</p>
+      </div>`
+    })
+    .join('')
+
+  await transport.sendMail({
+    from,
+    to,
+    subject: `[Escalation] ${escapeHtml(fromUserName)} needs assistance — ${deptName}`,
+    html: `
+      <!DOCTYPE html><html><body style="font-family:'DM Sans',Arial,sans-serif;background:#f9fafb;margin:0;padding:32px;">
+        <div style="max-width:600px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:36px;">
+          <h2 style="margin:0 0 4px;font-size:18px;color:#111827;">Chat escalation request</h2>
+          <p style="margin:0 0 20px;font-size:13px;color:#6b7280;">
+            ${escapeHtml(fromUserName)} escalated a conversation in <strong>${escapeHtml(deptName)}</strong> and needs your attention.
+          </p>
+          ${note ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;margin-bottom:20px;">
+            <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:#d97706;text-transform:uppercase;">User's note</p>
+            <p style="margin:0;font-size:13px;color:#111827;">${escapeHtml(note)}</p>
+          </div>` : ''}
+          <p style="margin:0 0 12px;font-size:12px;font-weight:600;color:#9ca3af;text-transform:uppercase;">Conversation transcript</p>
+          ${transcriptHtml}
+          <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
+            Respond to ${escapeHtml(fromUserName)} directly or review workflows in your
+            <a href="${APP_URL}/admin" style="color:#2563eb;">Admin panel</a>.
+          </p>
+        </div>
+      </body></html>
+    `,
+    text: `${fromUserName} escalated a conversation in ${deptName}.\n\nNote: ${note || '(none)'}\n\nTranscript:\n${transcript.map((m) => `[${m.role === 'user' ? fromUserName : 'AI'}] ${m.content.slice(0, 300)}`).join('\n\n')}`,
+  })
+}

@@ -337,3 +337,66 @@ Write tests for:
 - Pinned/starred chats — star icon on chat history items; starred chats appear in a fixed section at the top of the sidebar
 
 **Done when:** Voice dictation works in Chrome. `@` triggers document picker. Starred chats persist across sessions.
+
+---
+
+## TASK-24 — Custom AI persona per department ✅ DONE
+
+**Goal:** Each department can brand the AI with a custom name shown in chat bubbles and referenced in the system prompt.
+
+- Add `personaName String?` field to `Department` schema
+- Admin Settings → new "AI Persona" section with a name input
+- Chat bubbles show the persona name (truncated to 2 initials in avatar) instead of generic "AI"
+- System prompt references the persona name: "You are [name], the assistant for [dept]"
+
+**Done when:** Setting a persona name in admin settings changes the avatar label and system prompt identity for all new chats in that department.
+
+---
+
+## TASK-25 — Multi-language responses ✅ DONE
+
+**Goal:** The AI detects the language the user writes in and responds in that same language automatically.
+
+- Add a language-detection instruction to `buildSystemPrompt`: detect and match the user's language in every reply
+- No schema changes needed — prompt-only change
+
+**Done when:** Sending a message in Afrikaans returns an Afrikaans response; sending in English returns English.
+
+---
+
+## TASK-26 — Chat escalation to manager
+
+**Goal:** Users can escalate a conversation to their department manager with one click.
+
+- "Escalate to manager" button in the more menu (mobile) and as an action in the chat topbar
+- Opens a small modal: optional note from the user + confirm button
+- `POST /api/chat/escalate` — emails the dept manager with the conversation transcript and the user's note via the existing SMTP mailer
+- No new DB model required — fire-and-forget email
+
+**Done when:** Clicking escalate sends an email to the dept manager containing the conversation thread and user's note within 30 seconds.
+
+---
+
+## TASK-27 — Audit log
+
+**Goal:** Super admins can see a time-ordered log of significant system actions across all departments.
+
+- New `AuditLog` model: `id`, `userId`, `action` (enum), `targetId?`, `targetType?`, `meta Json?`, `deptId?`, `createdAt`
+- Log calls added to key routes: user role change, document add/delete, workflow approve/reject, dept settings save, superadmin add/revoke
+- `/superadmin/audit` page — filterable by dept + action type, paginated
+- Log entries are never deleted (append-only)
+
+**Done when:** Approving a workflow creates an audit log entry. Super admin audit page shows it with user, action, dept, and timestamp.
+
+---
+
+## TASK-28 — Department-to-department threaded messaging
+
+**Goal:** Department managers can have threaded conversations on cross-dept requests instead of just a single response field.
+
+- New `CrossDeptMessage` model: `id`, `requestId`, `fromUserId`, `fromDeptId`, `content`, `createdAt`
+- Cross-dept request detail view shows a message thread (like a simple comment thread)
+- Both the sending and receiving dept managers can post messages
+- New message triggers a push notification to the other dept's manager
+
+**Done when:** A manager on a cross-dept request can post a reply message, and the other manager sees it (with a push notification) without the request needing to be "resolved" first.

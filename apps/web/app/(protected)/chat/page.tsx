@@ -44,6 +44,7 @@ export default async function ChatPage() {
       initials={initials}
       sessions={sessions}
       availableDepts={availableDepts}
+      personaName={dept.personaName ?? undefined}
     />
   )
 }

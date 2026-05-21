@@ -52,6 +52,7 @@ interface MessageBubbleProps {
   content: string
   citations?: Citation[]
   initials?: string
+  personaName?: string
   isStreaming?: boolean
   messageId?: string
   sessionId?: string
@@ -209,6 +210,7 @@ export function MessageBubble({
   content,
   citations = [],
   initials = 'U',
+  personaName,
   isStreaming,
   messageId,
   sessionId,
@@ -219,6 +221,9 @@ export function MessageBubble({
   searchQuery = '',
   isCurrentMatch = false,
 }: MessageBubbleProps) {
+  const personaInitials = personaName
+    ? personaName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+    : 'AI'
   if (role === 'user') {
     return (
       <div className="group flex items-start gap-2.5 max-w-[88%] self-end flex-row-reverse">
@@ -241,8 +246,8 @@ export function MessageBubble({
 
   return (
     <div className="group flex items-start gap-2.5 max-w-[88%]">
-      <div className="w-7 h-7 rounded-full bg-surface-tertiary border border-border flex items-center justify-center text-[11px] font-semibold text-text-secondary flex-shrink-0 mt-0.5">
-        AI
+      <div className="w-7 h-7 rounded-full bg-surface-tertiary border border-border flex items-center justify-center text-[11px] font-semibold text-text-secondary flex-shrink-0 mt-0.5" title={personaName}>
+        {personaInitials}
       </div>
       <div className="min-w-0">
         <div className={`bg-white border border-border rounded-xl rounded-bl-sm px-3.5 py-2.5 text-[13.5px] leading-relaxed text-text-primary transition-shadow ${isCurrentMatch ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}>
@@ -285,11 +290,14 @@ export function MessageBubble({
   )
 }
 
-export function TypingIndicator() {
+export function TypingIndicator({ personaName }: { personaName?: string }) {
+  const initials = personaName
+    ? personaName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+    : 'AI'
   return (
     <div className="flex items-start gap-2.5">
-      <div className="w-7 h-7 rounded-full bg-surface-tertiary border border-border flex items-center justify-center text-[11px] font-semibold text-text-secondary flex-shrink-0">
-        AI
+      <div className="w-7 h-7 rounded-full bg-surface-tertiary border border-border flex items-center justify-center text-[11px] font-semibold text-text-secondary flex-shrink-0" title={personaName}>
+        {initials}
       </div>
       <div className="flex items-center gap-1 px-3.5 py-2.5 bg-white border border-border rounded-xl rounded-bl-sm w-fit">
         {[0, 200, 400].map((delay) => (

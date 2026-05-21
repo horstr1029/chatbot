@@ -85,6 +85,7 @@ const DEPT_SECTIONS = [
     ),
     items: [
       { q: 'How do I change the AI model?', a: 'Go to Settings → LLM model. Select a Claude model (cloud) or an Ollama model (local). Changes take effect on the next chat message. Local models are faster for simple questions but less capable on complex tasks.' },
+      { q: 'How do I set a custom AI persona name?', a: 'Go to Settings → AI Persona. Enter a name (e.g. "HR Helper" or "InstallBot"). This name appears in the chat bubble avatar and is referenced in the system prompt. Leave blank to use "[Dept] Assistant" as the default.' },
       { q: 'How do I set a custom system prompt?', a: 'Go to Settings → System prompt. Type instructions that are prepended to every AI response — e.g. "Always answer in Afrikaans" or "Focus only on installation-related questions". Keep it concise.' },
       { q: 'How do I enable web search for diagrams?', a: 'Go to Settings → Web search fallback. Toggle it on. When a user asks for a diagram and no documents match, the AI will search the web (via Tavily) for technical references. Requires a Tavily API key configured by the Super Admin.' },
     ],
@@ -153,6 +154,7 @@ const SUPER_SECTIONS = [
       { q: 'How do I configure email (SMTP)?', a: 'Go to Super Admin → Settings → Email. Enter your SMTP host, port, credentials, and sender address. Click Test email to verify. This is required for welcome emails and password resets to work.' },
       { q: 'How do I set a Tavily API key for web search?', a: 'The Tavily API key is set in the server environment file (.env.production.local) on the server. Add the line: TAVILY_API_KEY=your-key, then restart the app. Per-department web search can then be toggled in Admin → Settings.' },
       { q: 'How do I view system-wide analytics?', a: 'Go to Super Admin → Analytics. See total messages, active users, and top questions across all departments. Use this to identify which departments are under-utilising the chatbot or need more documents.' },
+      { q: 'How do I view the audit log?', a: 'Go to Super Admin → Audit Log. This shows a paginated, append-only record of significant actions: workflow approvals, user role changes, settings saves, super admin grants/revokes, and chat escalations. Filter by action type using the dropdown.' },
     ],
   },
 ]
