@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/client'
+import { Prisma } from '@prisma/client'
 
 export type AuditAction =
   | 'USER_ROLE_CHANGED'
@@ -21,7 +22,7 @@ export async function auditLog(params: {
   action: AuditAction
   targetId?: string
   targetType?: string
-  meta?: Record<string, unknown>
+  meta?: Prisma.InputJsonValue
   deptId?: string
 }) {
   try {
