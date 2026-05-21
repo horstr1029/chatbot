@@ -21,7 +21,7 @@ rm -rf .next/standalone/public
 cp -r public .next/standalone/public
 
 echo "[5/5] Restarting app..."
-pm2 restart chatbot-web --update-env
+cd ~/company-chatbot && pm2 startOrReload ecosystem.config.js --update-env
 
 echo ""
 echo "Done."
