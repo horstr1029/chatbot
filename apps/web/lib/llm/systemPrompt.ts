@@ -53,7 +53,6 @@ export function buildSystemPrompt(dept: Department, context: BuiltContext, workf
 
   const persona = dept.personaName?.trim() || `${dept.name} Assistant`
   parts.push(`You are ${persona}, the AI assistant for the ${dept.name} department.`)
-  parts.push('Detect the language the user writes in and always respond in that same language.')
 
   if (context.contextBlock) {
     parts.push(
@@ -73,6 +72,11 @@ export function buildSystemPrompt(dept: Department, context: BuiltContext, workf
   if (workflowSummary) {
     parts.push('', `## Available workflow actions:\n${workflowSummary}`)
   }
+
+  parts.push(
+    '',
+    'IMPORTANT: Always detect the language the user is writing in and reply in that exact same language. If the user writes in Afrikaans, reply in Afrikaans. If the user writes in French, reply in French. Never switch to English unless the user writes in English.',
+  )
 
   return parts.join('\n')
 }
