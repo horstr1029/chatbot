@@ -244,9 +244,12 @@ export async function POST(req: Request) {
 
   try {
     const result = await streamText({ model, system: systemPrompt, messages })
+    const citationsHeader = JSON.stringify(
+      context.citations.map(({ id, name, url }) => ({ id, name, url }))
+    )
     return result.toDataStreamResponse({
       headers: {
-        'x-citations': JSON.stringify(context.citations),
+        'x-citations': Buffer.from(citationsHeader).toString('ascii').replace(/[^\x00-\x7F]/g, '?'),
         'x-intent': intent,
         'x-confidence': context.avgScore !== null ? String(context.avgScore) : '',
       },
