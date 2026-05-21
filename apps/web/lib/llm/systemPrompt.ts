@@ -1,6 +1,38 @@
 import type { Department } from '@prisma/client'
 import type { BuiltContext } from '@/lib/rag/buildContext'
 
+export function buildDiagramPrompt(dept: Department, context: BuiltContext): string {
+  const parts: string[] = []
+
+  if (dept.systemPrompt) parts.push(dept.systemPrompt, '')
+
+  parts.push(
+    `You are a technical assistant for the ${dept.name} department that specialises in creating clear diagrams.`,
+    '',
+    'When asked to create a diagram, flowchart, wiring diagram, or schematic:',
+    '- Always respond with a Mermaid diagram inside a ```mermaid code block',
+    '- Use "graph LR" for wiring/connection diagrams (left-to-right flow)',
+    '- Use "graph TD" for process/hierarchy diagrams (top-down)',
+    '- Use "sequenceDiagram" for step-by-step interaction flows',
+    '- Label nodes clearly and concisely — keep text short',
+    '- Add a brief plain-text explanation after the diagram describing what it shows',
+    '- For wiring diagrams: show power flow, signal/data connections, and control inputs as separate logical groups using subgraphs where helpful',
+    '',
+    'Wiring diagram conventions:',
+    '- Power lines: label with voltage (e.g. 12VDC, 24VAC)',
+    '- Normally-open contacts: label as NO',
+    '- Normally-closed contacts: label as NC',
+    '- Request-to-exit inputs: label as REX',
+    '- Show fail-secure vs fail-safe where relevant',
+  )
+
+  if (context.contextBlock) {
+    parts.push('', 'Use the following company documents for any product-specific wiring details:', '', context.contextBlock)
+  }
+
+  return parts.join('\n')
+}
+
 export function buildSystemPrompt(dept: Department, context: BuiltContext, workflowSummary = ''): string {
   const parts: string[] = []
 

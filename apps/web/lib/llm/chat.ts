@@ -3,7 +3,7 @@ import { getLLMClient } from './router'
 import { detectIntent } from './intent'
 import { retrieve } from '@/lib/rag/retrieve'
 import { buildContext } from '@/lib/rag/buildContext'
-import { buildSystemPrompt } from './systemPrompt'
+import { buildSystemPrompt, buildDiagramPrompt } from './systemPrompt'
 import type { CitationSource } from '@/lib/rag/buildContext'
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string }
@@ -25,7 +25,7 @@ export async function streamChat(
   let context: { contextBlock: string; citations: CitationSource[]; avgScore: number | null } =
     { contextBlock: '', citations: [], avgScore: null }
 
-  if (intent === 'DOC_QUESTION') {
+  if (intent === 'DOC_QUESTION' || intent === 'DIAGRAM_REQUEST') {
     const chunks = await retrieve(userMessage, dept)
     context = buildContext(chunks)
     citations = context.citations
@@ -42,7 +42,9 @@ export async function streamChat(
     return { stream, citations: [], intent }
   }
 
-  const systemPrompt = buildSystemPrompt(dept, context)
+  const systemPrompt = intent === 'DIAGRAM_REQUEST'
+    ? buildDiagramPrompt(dept, context)
+    : buildSystemPrompt(dept, context)
   const { client } = getLLMClient(dept)
   const messages = [...history, { role: 'user' as const, content: userMessage }]
 

@@ -1,7 +1,51 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { CitationChip, type Citation } from './CitationChip'
+
+const MermaidDiagram = dynamic(
+  () => import('./MermaidDiagram').then((m) => m.MermaidDiagram),
+  { ssr: false },
+)
+
+type Segment = { type: 'text'; content: string } | { type: 'mermaid'; content: string }
+
+function parseSegments(text: string): Segment[] {
+  const segments: Segment[] = []
+  const regex = /```mermaid\n([\s\S]*?)```/g
+  let last = 0
+  let match: RegExpExecArray | null
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) segments.push({ type: 'text', content: text.slice(last, match.index) })
+    segments.push({ type: 'mermaid', content: match[1] })
+    last = match.index + match[0].length
+  }
+
+  if (last < text.length) segments.push({ type: 'text', content: text.slice(last) })
+  return segments
+}
+
+function MessageContent({ text, searchQuery }: { text: string; searchQuery: string }) {
+  const segments = parseSegments(text)
+  if (segments.length === 1 && segments[0].type === 'text') {
+    return <HighlightedText text={text} query={searchQuery} />
+  }
+  return (
+    <>
+      {segments.map((seg, i) =>
+        seg.type === 'mermaid' ? (
+          <MermaidDiagram key={i} definition={seg.content} />
+        ) : (
+          <span key={i} className="whitespace-pre-wrap">
+            <HighlightedText text={seg.content} query={searchQuery} />
+          </span>
+        )
+      )}
+    </>
+  )
+}
 
 interface MessageBubbleProps {
   role: 'user' | 'assistant'
@@ -201,8 +245,8 @@ export function MessageBubble({
         AI
       </div>
       <div className="min-w-0">
-        <div className={`bg-white border border-border rounded-xl rounded-bl-sm px-3.5 py-2.5 text-[13.5px] leading-relaxed text-text-primary whitespace-pre-wrap transition-shadow ${isCurrentMatch ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}>
-          <HighlightedText text={content} query={searchQuery} />
+        <div className={`bg-white border border-border rounded-xl rounded-bl-sm px-3.5 py-2.5 text-[13.5px] leading-relaxed text-text-primary transition-shadow ${isCurrentMatch ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}>
+          <MessageContent text={content} searchQuery={searchQuery} />
           {isStreaming && <span className="inline-block w-0.5 h-3.5 bg-text-muted ml-0.5 animate-pulse" />}
         </div>
         {timestamp && (
