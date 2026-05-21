@@ -22,9 +22,9 @@ export function SuperAdminNav() {
   return (
     <>
     <header className="bg-white border-b border-border">
-      <div className="max-w-6xl mx-auto px-6 h-[52px] flex items-center gap-6">
+      <div className="max-w-6xl mx-auto px-4 h-[52px] flex items-center gap-3 overflow-x-auto">
         <span className="text-[14px] font-semibold text-text-primary mr-2">Super Admin</span>
-        <nav className="flex items-center gap-1 flex-1">
+        <nav className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">
           {links.map((l) => (
             <Link
               key={l.href}

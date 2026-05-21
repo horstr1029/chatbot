@@ -21,6 +21,8 @@ interface SidebarProps {
   onDeleteSession: (id: string) => void
   onDeleteAll: () => void
   availableDepts: DeptOption[]
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
 type SessionItem = Pick<ChatSession, 'id' | 'title' | 'updatedAt'>
@@ -77,6 +79,8 @@ export function Sidebar({
   onDeleteSession,
   onDeleteAll,
   availableDepts,
+  mobileOpen = false,
+  onMobileClose,
 }: SidebarProps) {
   const router = useRouter()
   const [switching, setSwitching] = useState(false)
@@ -168,10 +172,16 @@ export function Sidebar({
   function handleSelect(id: string) {
     setSearchOpen(false)
     onSelectSession(id)
+    onMobileClose?.()
   }
 
   return (
-    <div style={{ width, flexShrink: 0, position: 'relative' }} className="bg-white border-r border-border flex flex-col h-full">
+    <div
+      style={{ width }}
+      className={`bg-white border-r border-border flex flex-col h-full z-40 transition-transform duration-200
+        fixed inset-y-0 left-0 md:relative md:translate-x-0
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+    >
       <div className="px-4 pt-4 pb-2 flex items-center gap-2">
         <img src="/logo.jpg" alt="MST Chatbot" className="h-10 object-contain flex-1" />
         {isSuperAdmin && (
@@ -210,7 +220,7 @@ export function Sidebar({
       {/* New chat + search toggle */}
       <div className="px-3 mt-3 flex gap-1.5">
         <button
-          onClick={onNewChat}
+          onClick={() => { onNewChat(); onMobileClose?.() }}
           className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white hover:bg-gray-800 transition-colors"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -309,9 +319,10 @@ export function Sidebar({
         <LogoutButton />
       </div>
 
-      {/* Resize handle */}
+      {/* Resize handle — desktop only */}
       <div
         onMouseDown={onDragStart}
+        className="hidden md:block"
         style={{ position: 'absolute', top: 0, right: 0, width: 4, height: '100%', cursor: 'col-resize', zIndex: 10 }}
         title="Drag to resize"
       />

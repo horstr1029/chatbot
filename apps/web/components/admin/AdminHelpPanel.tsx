@@ -170,7 +170,7 @@ export function AdminHelpPanel({ open, onClose }: AdminHelpPanelProps) {
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/20" onClick={onClose} />}
-      <div className={`fixed top-0 right-0 h-full z-40 w-[480px] bg-white border-l border-border flex flex-col shadow-lg transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full z-40 w-full sm:w-[480px] bg-white border-l border-border flex flex-col shadow-lg transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
 
         {/* Header */}
         <div className="h-[52px] flex items-center px-5 gap-3 border-b border-border flex-shrink-0">
