@@ -128,19 +128,19 @@ export async function POST(req: Request) {
         template.name.toLowerCase().includes('leave') ||
         template.fields.some((f) => f.name === 'fromDate' || f.name === 'leaveType')
 
-      let replyText = "I've pre-filled the form below — review and submit when ready."
+      const replyText = "I've pre-filled the form below — review and submit when ready."
+
+      let balanceNote: string | null = null
       if (isLeaveTemplate) {
         const { balance } = await accrueIfDue(ctx.user_id, ctx.dept_id)
-        const display = balance.toFixed(1)
-        const balanceNote =
+        balanceNote =
           balance < 0
             ? `You currently have **${Math.abs(balance).toFixed(1)} days** of leave in deficit.`
-            : `You currently have **${display} day${Number(display) !== 1 ? 's' : ''}** of leave available.`
-        replyText = `${balanceNote}\n\nI've pre-filled the form below — review and submit when ready.`
+            : `You currently have **${balance.toFixed(1)} day${balance.toFixed(1) !== '1.0' ? 's' : ''}** of leave available.`
       }
 
       const sd = new StreamData()
-      sd.append({ type: 'form', template, filled })
+      sd.append({ type: 'form', template, filled, balanceNote })
       const result = await streamText({
         model: ollamaProvider()(dept.llmModel),
         messages: [{ role: 'user', content: replyText }],

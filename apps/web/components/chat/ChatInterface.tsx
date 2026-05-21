@@ -38,6 +38,7 @@ type StoredMessage = { id: string; role: 'user' | 'assistant'; content: string }
 interface FormData {
   template: { id: string; name: string; fields: FormField[] }
   filled: Record<string, string>
+  balanceNote?: string | null
 }
 
 const SUGGESTED_QUESTIONS = (deptName: string) => [
@@ -437,6 +438,11 @@ export function ChatInterface({
               />
               {m.role === 'assistant' && formDataMap[m.id] && !hiddenFormIds.has(m.id) && (
                 <div className="ml-9">
+                  {formDataMap[m.id].balanceNote && (
+                    <div className="mb-2 px-3.5 py-2 bg-brand-50 border border-brand-100 rounded-lg text-[13px] text-brand-700 font-medium">
+                      {formDataMap[m.id].balanceNote}
+                    </div>
+                  )}
                   <FormPreview
                     template={formDataMap[m.id].template}
                     filled={formDataMap[m.id].filled}
