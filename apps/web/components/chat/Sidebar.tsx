@@ -32,8 +32,13 @@ function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
   onStar: (e: React.MouseEvent) => void
   onDelete: (e: React.MouseEvent) => void
 }) {
+  const [hovered, setHovered] = useState(false)
   return (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+    <div
+      style={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <button
         onClick={onSelect}
         style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 6px 6px 10px', borderRadius: 6, fontSize: 13, cursor: 'pointer', border: 'none', background: active ? '#eff6ff' : 'transparent', color: active ? '#1d4ed8' : '#4b5563', fontWeight: active ? 500 : 400, textAlign: 'left' }}
@@ -43,14 +48,14 @@ function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
       <button
         onClick={onDelete}
         title="Delete chat"
-        style={{ flexShrink: 0, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 15, lineHeight: 1, padding: 0 }}
+        style={{ flexShrink: 0, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 15, lineHeight: 1, padding: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
       >
         ×
       </button>
       <button
         onClick={onStar}
         title={starred ? 'Unstar' : 'Star'}
-        style={{ flexShrink: 0, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: 'none', background: 'none', cursor: 'pointer', color: starred ? '#f59e0b' : '#d1d5db', fontSize: 13, padding: 0 }}
+        style={{ flexShrink: 0, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: 'none', background: 'none', cursor: 'pointer', color: starred ? '#f59e0b' : '#9ca3af', fontSize: 13, padding: 0, opacity: hovered || starred ? 1 : 0, transition: 'opacity 0.15s' }}
       >
         ★
       </button>
