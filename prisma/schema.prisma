@@ -57,6 +57,7 @@ model User {
   reminders             Reminder[]
   approvalSteps         WorkflowApprovalStep[] @relation("stepApprovedBy")
   crossDeptRequests     CrossDeptRequest[]     @relation("crossRequester")
+  crossDeptMessages     CrossDeptMessage[]
   leaveBalances         LeaveBalance[]
 }
 
@@ -243,20 +244,32 @@ model Reminder {
 }
 
 model CrossDeptRequest {
-  id            String          @id @default(cuid())
+  id            String               @id @default(cuid())
   title         String
-  description   String          @db.Text
+  description   String               @db.Text
   fromDeptId    String
-  fromDept      Department      @relation("crossFrom", fields: [fromDeptId], references: [id])
+  fromDept      Department           @relation("crossFrom", fields: [fromDeptId], references: [id])
   toDeptId      String
-  toDept        Department      @relation("crossTo", fields: [toDeptId], references: [id])
+  toDept        Department           @relation("crossTo", fields: [toDeptId], references: [id])
   requestedById String
-  requestedBy   User            @relation("crossRequester", fields: [requestedById], references: [id])
-  status        CrossDeptStatus @default(OPEN)
-  response      String?         @db.Text
+  requestedBy   User                 @relation("crossRequester", fields: [requestedById], references: [id])
+  status        CrossDeptStatus      @default(OPEN)
+  response      String?              @db.Text
   resolvedAt    DateTime?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  messages      CrossDeptMessage[]
+}
+
+model CrossDeptMessage {
+  id        String           @id @default(cuid())
+  requestId String
+  request   CrossDeptRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  deptId    String
+  content   String           @db.Text
+  createdAt DateTime         @default(now())
 }
 
 enum CrossDeptStatus {

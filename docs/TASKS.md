@@ -390,7 +390,7 @@ Write tests for:
 
 ---
 
-## TASK-28 — Department-to-department threaded messaging
+## TASK-28 — Department-to-department threaded messaging ✅ DONE
 
 **Goal:** Department managers can have threaded conversations on cross-dept requests instead of just a single response field.
 

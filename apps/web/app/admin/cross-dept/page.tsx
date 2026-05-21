@@ -23,6 +23,10 @@ export default async function CrossDeptPage() {
         fromDept: { select: { name: true } },
         toDept: { select: { name: true } },
         requestedBy: { select: { name: true, email: true } },
+        messages: {
+          orderBy: { createdAt: 'asc' },
+          include: { user: { select: { name: true, email: true } } },
+        },
       },
     }),
     prisma.department.findMany({
@@ -38,6 +42,13 @@ export default async function CrossDeptPage() {
         createdAt: r.createdAt.toISOString(),
         resolvedAt: r.resolvedAt?.toISOString() ?? null,
         status: r.status as 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CANCELLED',
+        messages: r.messages.map((m) => ({
+          id: m.id,
+          content: m.content,
+          deptId: m.deptId,
+          createdAt: m.createdAt.toISOString(),
+          user: m.user,
+        })),
       }))}
       deptId={deptId}
       allDepts={allDepts}

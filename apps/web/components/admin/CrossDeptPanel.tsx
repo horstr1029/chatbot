@@ -1,9 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 type CrossDeptStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CANCELLED'
+
+interface MessageRow {
+  id: string
+  content: string
+  deptId: string
+  createdAt: string
+  user: { name: string | null; email: string }
+}
 
 interface CrossDeptRequestRow {
   id: string
@@ -16,6 +24,7 @@ interface CrossDeptRequestRow {
   fromDept: { name: string }
   toDept: { name: string }
   requestedBy: { name: string | null; email: string }
+  messages: MessageRow[]
 }
 
 interface DeptOption {
@@ -44,12 +53,25 @@ function StatusBadge({ status }: { status: CrossDeptStatus }) {
   )
 }
 
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleString(undefined, {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
+}
+
 export function CrossDeptPanel({ requests: initialRequests, deptId, allDepts }: CrossDeptPanelProps) {
   const router = useRouter()
   const [tab, setTab] = useState<'incoming' | 'outgoing'>('incoming')
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [responseText, setResponseText] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState<string | null>(null)
+
+  // Per-request message draft
+  const [msgDraft, setMsgDraft] = useState<Record<string, string>>({})
+  const [msgSending, setMsgSending] = useState<string | null>(null)
+  // Optimistic messages per request
+  const [localMessages, setLocalMessages] = useState<Record<string, MessageRow[]>>({})
+
+  const threadRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   // New request form
   const [newOpen, setNewOpen] = useState(false)
@@ -59,14 +81,22 @@ export function CrossDeptPanel({ requests: initialRequests, deptId, allDepts }: 
   const [newSubmitting, setNewSubmitting] = useState(false)
   const [newError, setNewError] = useState('')
 
-  // We rely on the server-fetched data directly, filtered by direction using dept names
-  // The server already filters by fromDeptId OR toDeptId matching deptId,
-  // so we use the name of our dept to categorise rows.
   const myDeptName = allDepts.find((d) => d.id === deptId)?.name ?? ''
   const allIncoming = initialRequests.filter((r) => r.toDept.name === myDeptName)
   const allOutgoing = initialRequests.filter((r) => r.fromDept.name === myDeptName)
-
   const displayed = tab === 'incoming' ? allIncoming : allOutgoing
+
+  function getMessages(r: CrossDeptRequestRow): MessageRow[] {
+    return localMessages[r.id] ?? r.messages
+  }
+
+  // Scroll thread to bottom when expanded or new message
+  useEffect(() => {
+    if (expandedId) {
+      const el = threadRefs.current[expandedId]
+      if (el) el.scrollTop = el.scrollHeight
+    }
+  }, [expandedId, localMessages])
 
   async function updateRequest(id: string, updates: { status?: string; response?: string }) {
     setLoading(id)
@@ -84,6 +114,29 @@ export function CrossDeptPanel({ requests: initialRequests, deptId, allDepts }: 
     await fetch(`/api/cross-dept/${id}`, { method: 'DELETE' })
     setLoading(null)
     router.refresh()
+  }
+
+  async function sendMessage(requestId: string) {
+    const content = msgDraft[requestId]?.trim()
+    if (!content) return
+    setMsgSending(requestId)
+
+    const res = await fetch(`/api/cross-dept/${requestId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    })
+
+    setMsgSending(null)
+
+    if (res.ok) {
+      const { data } = await res.json()
+      setLocalMessages((prev) => {
+        const base = prev[requestId] ?? initialRequests.find((r) => r.id === requestId)?.messages ?? []
+        return { ...prev, [requestId]: [...base, data] }
+      })
+      setMsgDraft((prev) => ({ ...prev, [requestId]: '' }))
+    }
   }
 
   async function handleNewRequest() {
@@ -209,9 +262,7 @@ export function CrossDeptPanel({ requests: initialRequests, deptId, allDepts }: 
       {/* Table */}
       {displayed.length === 0 ? (
         <div className="bg-white border border-border rounded-lg p-10 text-center">
-          <p className="text-[13px] text-text-muted">
-            No {tab} requests yet.
-          </p>
+          <p className="text-[13px] text-text-muted">No {tab} requests yet.</p>
         </div>
       ) : (
         <div className="bg-white border border-border rounded-lg overflow-hidden">
@@ -219,90 +270,135 @@ export function CrossDeptPanel({ requests: initialRequests, deptId, allDepts }: 
             <thead>
               <tr className="border-b border-border bg-surface-secondary">
                 {['Title', tab === 'incoming' ? 'From' : 'To', 'Date', 'Status', ''].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[12px] font-medium text-text-muted">
-                    {h}
-                  </th>
+                  <th key={h} className="text-left px-4 py-3 text-[12px] font-medium text-text-muted">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {displayed.map((r) => (
-                <>
-                  <tr
-                    key={r.id}
-                    className={`hover:bg-surface-secondary cursor-pointer transition-colors ${
-                      r.status === 'OPEN' ? 'bg-amber-50/30' : r.status === 'IN_PROGRESS' ? 'bg-brand-50/30' : ''
-                    }`}
-                    onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
-                  >
-                    <td className="px-4 py-3 text-[13px] text-text-primary font-medium">{r.title}</td>
-                    <td className="px-4 py-3 text-[13px] text-text-secondary">
-                      {tab === 'incoming' ? r.fromDept.name : r.toDept.name}
-                    </td>
-                    <td className="px-4 py-3 text-[12px] text-text-muted whitespace-nowrap">
-                      {new Date(r.createdAt).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={r.status} />
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <svg
-                        className={`w-4 h-4 text-text-muted ml-auto transition-transform ${expandedId === r.id ? 'rotate-180' : ''}`}
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </td>
-                  </tr>
+              {displayed.map((r) => {
+                const messages = getMessages(r)
+                const isClosed = r.status === 'RESOLVED' || r.status === 'CANCELLED'
+                return (
+                  <>
+                    <tr
+                      key={r.id}
+                      className={`hover:bg-surface-secondary cursor-pointer transition-colors ${
+                        r.status === 'OPEN' ? 'bg-amber-50/30' : r.status === 'IN_PROGRESS' ? 'bg-brand-50/30' : ''
+                      }`}
+                      onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                    >
+                      <td className="px-4 py-3 text-[13px] text-text-primary font-medium">
+                        {r.title}
+                        {messages.length > 0 && (
+                          <span className="ml-2 text-[11px] text-text-muted font-normal">
+                            {messages.length} message{messages.length !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-[13px] text-text-secondary">
+                        {tab === 'incoming' ? r.fromDept.name : r.toDept.name}
+                      </td>
+                      <td className="px-4 py-3 text-[12px] text-text-muted whitespace-nowrap">
+                        {new Date(r.createdAt).toLocaleDateString(undefined, {
+                          month: 'short', day: 'numeric', year: 'numeric',
+                        })}
+                      </td>
+                      <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                      <td className="px-4 py-3 text-right">
+                        <svg
+                          className={`w-4 h-4 text-text-muted ml-auto transition-transform ${expandedId === r.id ? 'rotate-180' : ''}`}
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </td>
+                    </tr>
 
-                  {expandedId === r.id && (
-                    <tr key={`${r.id}-detail`} className="bg-surface-secondary">
-                      <td colSpan={5} className="px-4 py-4">
-                        <div className="space-y-3">
-                          <div>
-                            <p className="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-1">Description</p>
-                            <p className="text-[13px] text-text-primary">{r.description}</p>
-                          </div>
-                          <div>
-                            <p className="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-1">Requested by</p>
-                            <p className="text-[13px] text-text-secondary">
-                              {r.requestedBy.name ?? r.requestedBy.email}
-                            </p>
-                          </div>
+                    {expandedId === r.id && (
+                      <tr key={`${r.id}-detail`} className="bg-surface-secondary">
+                        <td colSpan={5} className="px-4 py-4">
+                          <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
 
-                          {r.response && (
-                            <div>
-                              <p className="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-1">Response</p>
-                              <p className="text-[13px] text-text-secondary">{r.response}</p>
+                            {/* Request details */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-1">Description</p>
+                                <p className="text-[13px] text-text-primary">{r.description}</p>
+                              </div>
+                              <div>
+                                <p className="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-1">Requested by</p>
+                                <p className="text-[13px] text-text-secondary">{r.requestedBy.name ?? r.requestedBy.email}</p>
+                              </div>
                             </div>
-                          )}
 
-                          {/* Incoming actions */}
-                          {tab === 'incoming' && (r.status === 'OPEN' || r.status === 'IN_PROGRESS') && (
-                            <div className="space-y-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                              <textarea
-                                rows={2}
-                                value={responseText[r.id] ?? ''}
-                                onChange={(e) =>
-                                  setResponseText((prev) => ({ ...prev, [r.id]: e.target.value }))
-                                }
-                                placeholder="Add a response (optional)…"
-                                className="w-full rounded-md border border-border px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600 resize-none"
-                              />
-                              <div className="flex items-center gap-2">
+                            {/* Message thread */}
+                            <div>
+                              <p className="text-[11px] font-medium text-text-muted uppercase tracking-wide mb-2">
+                                Thread {messages.length > 0 ? `(${messages.length})` : ''}
+                              </p>
+
+                              {messages.length === 0 ? (
+                                <p className="text-[12px] text-text-muted italic">No messages yet. Start the conversation below.</p>
+                              ) : (
+                                <div
+                                  ref={(el) => { threadRefs.current[r.id] = el }}
+                                  className="space-y-2 max-h-60 overflow-y-auto pr-1"
+                                >
+                                  {messages.map((m) => {
+                                    const isMe = m.deptId === deptId
+                                    return (
+                                      <div key={m.id} className={`flex gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}>
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 mt-0.5 ${isMe ? 'bg-brand-600 text-white' : 'bg-surface-tertiary border border-border text-text-secondary'}`}>
+                                          {(m.user.name ?? m.user.email).charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className={`max-w-[75%] ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
+                                          <div className={`px-3 py-2 rounded-lg text-[13px] leading-relaxed ${isMe ? 'bg-brand-600 text-white rounded-br-sm' : 'bg-white border border-border text-text-primary rounded-bl-sm'}`}>
+                                            {m.content}
+                                          </div>
+                                          <span className="text-[11px] text-text-muted">
+                                            {m.user.name ?? m.user.email} · {formatTime(m.createdAt)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Message composer */}
+                              {!isClosed && (
+                                <div className="mt-3 flex gap-2 items-end">
+                                  <textarea
+                                    rows={2}
+                                    value={msgDraft[r.id] ?? ''}
+                                    onChange={(e) => setMsgDraft((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault()
+                                        sendMessage(r.id)
+                                      }
+                                    }}
+                                    placeholder="Type a message… (Enter to send)"
+                                    className="flex-1 rounded-md border border-border px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600 resize-none"
+                                  />
+                                  <button
+                                    disabled={msgSending === r.id || !msgDraft[r.id]?.trim()}
+                                    onClick={() => sendMessage(r.id)}
+                                    className="px-3 py-2 rounded-md bg-brand-600 text-white text-[13px] font-medium hover:bg-brand-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+                                  >
+                                    {msgSending === r.id ? 'Sending…' : 'Send'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Status actions — incoming only */}
+                            {tab === 'incoming' && !isClosed && (
+                              <div className="flex items-center gap-2 pt-1 border-t border-border">
                                 {r.status === 'OPEN' && (
                                   <button
                                     disabled={!!loading}
-                                    onClick={() =>
-                                      updateRequest(r.id, {
-                                        status: 'IN_PROGRESS',
-                                        response: responseText[r.id] || undefined,
-                                      })
-                                    }
+                                    onClick={() => updateRequest(r.id, { status: 'IN_PROGRESS' })}
                                     className="px-3 py-1.5 rounded-md bg-brand-600 text-white text-[13px] font-medium hover:bg-brand-700 disabled:opacity-50 transition-colors"
                                   >
                                     Mark in progress
@@ -310,38 +406,33 @@ export function CrossDeptPanel({ requests: initialRequests, deptId, allDepts }: 
                                 )}
                                 <button
                                   disabled={!!loading}
-                                  onClick={() =>
-                                    updateRequest(r.id, {
-                                      status: 'RESOLVED',
-                                      response: responseText[r.id] || undefined,
-                                    })
-                                  }
+                                  onClick={() => updateRequest(r.id, { status: 'RESOLVED' })}
                                   className="px-3 py-1.5 rounded-md bg-green-600 text-white text-[13px] font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
                                 >
                                   {loading === r.id ? 'Saving…' : 'Mark resolved'}
                                 </button>
                               </div>
-                            </div>
-                          )}
+                            )}
 
-                          {/* Outgoing cancel */}
-                          {tab === 'outgoing' && r.status === 'OPEN' && (
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <button
-                                disabled={!!loading}
-                                onClick={() => cancelRequest(r.id)}
-                                className="px-3 py-1.5 rounded-md text-red-600 text-[13px] hover:bg-red-50 disabled:opacity-50 transition-colors"
-                              >
-                                {loading === r.id ? 'Cancelling…' : 'Cancel request'}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </>
-              ))}
+                            {/* Cancel — outgoing only */}
+                            {tab === 'outgoing' && r.status === 'OPEN' && (
+                              <div className="pt-1 border-t border-border">
+                                <button
+                                  disabled={!!loading}
+                                  onClick={() => cancelRequest(r.id)}
+                                  className="px-3 py-1.5 rounded-md text-red-600 text-[13px] hover:bg-red-50 disabled:opacity-50 transition-colors"
+                                >
+                                  {loading === r.id ? 'Cancelling…' : 'Cancel request'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                )
+              })}
             </tbody>
           </table>
         </div>
