@@ -91,6 +91,19 @@ const DEPT_SECTIONS = [
     ],
   },
   {
+    title: 'Cross-department requests',
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+    ),
+    items: [
+      { q: 'How do I send a request to another department?', a: 'Go to Admin → Cross-Department Requests → New request. Select the target department, enter a title and description, and click Send. The other department\'s manager is notified via push notification.' },
+      { q: 'How does the message thread work?', a: 'Expand any request row to open its thread. Both the sending and receiving department managers can post messages. Each new message sends a push notification to the other party. The request moves to "In Progress" automatically on the first message.' },
+      { q: 'How do I resolve a request?', a: 'On an incoming request, expand the row and click "Mark resolved". The status updates and the request moves to the closed section. No further messages can be posted once resolved.' },
+    ],
+  },
+  {
     title: 'Quality & analytics',
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

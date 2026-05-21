@@ -538,7 +538,7 @@ export function ChatInterface({
                 Ask anything about {deptName}
               </p>
               <p className="text-[13px] text-text-muted max-w-sm text-center mb-6">
-                Search documents, get answers, or request a workflow automation.
+                Search documents, get answers, request workflows, or submit forms — in any language.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full px-4 sm:px-0">
                 {suggestions.map((q) => (
