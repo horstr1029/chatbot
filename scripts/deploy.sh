@@ -41,7 +41,7 @@ echo "[1/6] Pulling latest code..."
 remote "git pull origin main"
 
 echo "[2/6] Installing dependencies..."
-remote "cd $APP_DIR && npm install --omit=dev"
+remote "cd $APP_DIR && npm install"
 
 echo "[3/6] Running DB migrations..."
 remote "cd $APP_DIR && DATABASE_URL='$DB_URL' npx prisma db push --schema=../../prisma/schema.prisma"

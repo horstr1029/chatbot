@@ -370,13 +370,10 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
                             <div className="space-y-2 mb-3">
                               {leaveEdits[u.id].leaveTypes.map((lt, idx) => (
                                 <div key={idx} className="flex items-center gap-3 flex-wrap">
-                                  <input
-                                    type="text"
-                                    value={lt.type}
-                                    onChange={(e) => updateLeaveType(u.id, idx, 'type', e.target.value)}
-                                    placeholder="Type name"
-                                    className="w-36 rounded-md border border-border px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-brand-600"
-                                  />
+                                  <div className="w-36">
+                                    <p className="text-[10px] text-text-muted mb-0.5">Type</p>
+                                    <p className="text-[13px] font-medium text-text-primary px-2 py-1.5">{lt.type}</p>
+                                  </div>
                                   <div>
                                     <p className="text-[10px] text-text-muted mb-0.5">Allocation</p>
                                     <input
