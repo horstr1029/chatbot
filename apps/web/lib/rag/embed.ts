@@ -23,6 +23,7 @@ async function embedOllama(text: string, model: string): Promise<number[]> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, prompt: text }),
+    signal: AbortSignal.timeout(120_000),
   })
   if (!res.ok) throw new Error(`Ollama embed error: ${res.status}`)
   const data = await res.json()

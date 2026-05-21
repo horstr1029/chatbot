@@ -218,12 +218,17 @@ export async function POST(req: Request) {
       select: { deptId: true },
     })
     const extraDeptIds = memberships.map((m) => m.deptId).filter((id) => id !== dept.id)
-    // Warm the chat model while embedding runs — embedding can evict it from VRAM
-    const [chunks] = await Promise.all([
-      retrieve(userMessage, dept, extraDeptIds),
-      warmChatModel(dept.llmModel),
-    ])
-    context = buildContext(chunks)
+    try {
+      // Warm the chat model while embedding runs — embedding can evict it from VRAM
+      const [chunks] = await Promise.all([
+        retrieve(userMessage, dept, extraDeptIds),
+        warmChatModel(dept.llmModel),
+      ])
+      context = buildContext(chunks)
+    } catch (err) {
+      log('warn', 'retrieval_failed', { error: err instanceof Error ? err.message : String(err) })
+      // Fall through to general chat with no context
+    }
   }
 
   const systemPrompt = buildSystemPrompt(dept, context)
@@ -240,7 +245,7 @@ export async function POST(req: Request) {
     })
   } catch {
     const errorResult = await streamText({
-      model: ollamaProvider()('mistral:7b-instruct'),
+      model: ollamaProvider()(dept.llmModel),
       messages: [{ role: 'user', content: 'repeat exactly: AI model unavailable. Please contact your admin.' }],
       system: 'Repeat the message exactly as given, word for word.',
     })
