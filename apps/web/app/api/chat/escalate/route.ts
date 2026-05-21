@@ -14,12 +14,13 @@ export const POST = withErrorHandler(async (req) => {
   const ctx = await deptMiddleware()
   const { sessionId, note } = schema.parse(await req.json())
 
-  const [session, user, manager] = await Promise.all([
+  const [session, user, dept, manager] = await Promise.all([
     prisma.chatSession.findUnique({
       where: { id: sessionId, userId: ctx.user_id },
-      select: { messages: true, dept: { select: { name: true } } },
+      select: { messages: true, deptId: true },
     }),
     prisma.user.findUnique({ where: { id: ctx.user_id }, select: { name: true, email: true } }),
+    prisma.department.findUnique({ where: { id: ctx.dept_id ?? '' }, select: { name: true } }),
     prisma.userDepartment.findFirst({
       where: { deptId: ctx.dept_id ?? '', role: 'MANAGER' },
       include: { user: { select: { email: true, name: true } } },
@@ -36,7 +37,7 @@ export const POST = withErrorHandler(async (req) => {
     to: manager.user.email,
     managerName: manager.user.name,
     fromUserName: user.name ?? user.email,
-    deptName: session.dept.name,
+    deptName: dept?.name ?? 'Unknown',
     note,
     transcript,
   })
