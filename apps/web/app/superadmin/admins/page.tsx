@@ -11,7 +11,7 @@ export default async function SuperAdminsPage() {
     orderBy: { name: 'asc' },
   })
 
-  const data = admins.map((a) => ({ ...a, createdAt: a.createdAt.toISOString(), isSelf: a.id === session.userId }))
+  const data = admins.map((a) => ({ ...a, name: a.name ?? a.email, createdAt: a.createdAt.toISOString(), isSelf: a.id === session.userId }))
 
   return (
     <div>
