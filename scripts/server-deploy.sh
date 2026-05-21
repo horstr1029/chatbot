@@ -12,6 +12,9 @@ cd "$APP" && npm install --prefer-offline
 echo "[2/5] Running DB migrations..."
 DATABASE_URL="$DB_URL" npx prisma db push --schema=../../prisma/schema.prisma --accept-data-loss
 
+echo "[2b/5] Generating Prisma client..."
+DATABASE_URL="$DB_URL" npx prisma generate --schema=../../prisma/schema.prisma
+
 echo "[3/5] Building Next.js app..."
 npm run build
 
