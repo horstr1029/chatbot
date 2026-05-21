@@ -52,7 +52,6 @@ const SUGGESTED_QUESTIONS = (deptName: string) => [
   `How do I submit an expense claim?`,
   `Create a wiring diagram for a door access control system`,
   `Draw a flowchart for the ${deptName} approval process`,
-  `Verduidelik die verlofbeleid vir ${deptName}`,
 ]
 
 export function ChatInterface({
