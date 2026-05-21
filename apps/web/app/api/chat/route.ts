@@ -7,7 +7,8 @@ import { getDept } from '@/lib/dept/getDept'
 import { detectIntent } from '@/lib/llm/intent'
 import { retrieve } from '@/lib/rag/retrieve'
 import { buildContext } from '@/lib/rag/buildContext'
-import { buildSystemPrompt } from '@/lib/llm/systemPrompt'
+import { buildSystemPrompt, buildDiagramPrompt } from '@/lib/llm/systemPrompt'
+import { searchWeb, buildWebContext } from '@/lib/search/tavily'
 import { designWorkflow } from '@/lib/n8n/designer'
 import { n8nClient } from '@/lib/n8n/client'
 import { prisma } from '@/lib/db/client'
@@ -215,6 +216,47 @@ export async function POST(req: Request) {
       })
     }
     // No templates — fall through to normal chat
+  }
+
+  // ── Diagram request path ───────────────────────────────────────
+  if (intent === 'DIAGRAM_REQUEST') {
+    let diagramContext: { contextBlock: string; citations: { id: string; name: string; url: string; text: string }[]; avgScore: number | null } =
+      { contextBlock: '', citations: [], avgScore: null }
+
+    try {
+      const chunks = await retrieve(userMessage, dept)
+      if (chunks.length > 0) {
+        diagramContext = buildContext(chunks)
+      } else if (dept.webSearchEnabled) {
+        log('info', 'diagram_web_search_fallback', { dept_id: dept.id })
+        const webResults = await searchWeb(`${userMessage} wiring diagram installation`)
+        const { contextBlock, citations } = buildWebContext(webResults)
+        diagramContext = { contextBlock, citations, avgScore: null }
+      }
+    } catch (err) {
+      log('warn', 'diagram_retrieval_failed', { error: err instanceof Error ? err.message : String(err) })
+    }
+
+    const systemPrompt = buildDiagramPrompt(dept, diagramContext)
+    try {
+      const result = await streamText({ model: ollamaProvider()(dept.llmModel), system: systemPrompt, messages })
+      const citationsHeader = JSON.stringify(diagramContext.citations.map(({ id, name, url }) => ({ id, name, url })))
+      return result.toDataStreamResponse({
+        headers: {
+          'x-citations': Buffer.from(citationsHeader).toString('ascii').replace(/[^\x00-\x7F]/g, '?'),
+          'x-intent': intent,
+          'x-confidence': '',
+        },
+      })
+    } catch (err) {
+      log('error', 'diagram_stream_failed', { error: err instanceof Error ? err.message : String(err) })
+      const errorResult = await streamText({
+        model: ollamaProvider()(dept.llmModel),
+        messages: [{ role: 'user', content: 'repeat exactly: AI model unavailable. Please contact your admin.' }],
+        system: 'Repeat the message exactly as given, word for word.',
+      })
+      return errorResult.toDataStreamResponse({ headers: { 'x-citations': '[]', 'x-intent': intent, 'x-confidence': '' } })
+    }
   }
 
   // ── RAG / general path ─────────────────────────────────────────

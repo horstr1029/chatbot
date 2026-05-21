@@ -11,7 +11,7 @@ export default async function SettingsPage() {
 
   const dept = await prisma.department.findUnique({
     where: { id: deptId },
-    select: { id: true, name: true, systemPrompt: true, llmModel: true, embedModel: true, widgetToken: true, slackWebhookUrl: true },
+    select: { id: true, name: true, systemPrompt: true, llmModel: true, embedModel: true, widgetToken: true, slackWebhookUrl: true, webSearchEnabled: true },
   })
   if (!dept) redirect('/chat')
 

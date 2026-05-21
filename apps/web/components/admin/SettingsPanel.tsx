@@ -11,6 +11,7 @@ interface DeptConfig {
   embedModel: string
   widgetToken: string | null
   slackWebhookUrl: string | null
+  webSearchEnabled: boolean
 }
 
 interface ApprovalChainStep {
@@ -119,6 +120,7 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
     llmModel: dept.llmModel,
     embedModel: dept.embedModel,
     slackWebhookUrl: dept.slackWebhookUrl ?? '',
+    webSearchEnabled: dept.webSearchEnabled,
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -127,7 +129,8 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
     form.systemPrompt !== (dept.systemPrompt ?? '') ||
     form.llmModel !== dept.llmModel ||
     form.embedModel !== dept.embedModel ||
-    form.slackWebhookUrl !== (dept.slackWebhookUrl ?? '')
+    form.slackWebhookUrl !== (dept.slackWebhookUrl ?? '') ||
+    form.webSearchEnabled !== dept.webSearchEnabled
 
   async function handleSave() {
     setSaving(true)
@@ -251,6 +254,27 @@ export function SettingsPanel({ dept }: SettingsPanelProps) {
           className="w-full rounded-md border border-border px-3 py-2 text-[13px] font-mono focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent resize-none"
           placeholder="You are a helpful assistant for the HR department..."
         />
+      </div>
+
+      <div className="bg-white border border-border rounded-lg p-5 space-y-3">
+        <div>
+          <p className="text-[13px] font-semibold text-text-primary">Web search fallback</p>
+          <p className="text-[12px] text-text-muted mt-0.5">
+            When no department documents match a diagram request, search the web for relevant wiring and technical information.
+            Requires a <code className="text-[11px] bg-surface-tertiary px-1 py-0.5 rounded">TAVILY_API_KEY</code> environment variable.
+          </p>
+        </div>
+        <label className="flex items-center gap-3 cursor-pointer w-fit">
+          <div
+            onClick={() => setForm((f) => ({ ...f, webSearchEnabled: !f.webSearchEnabled }))}
+            className={`relative w-9 h-5 rounded-full transition-colors ${form.webSearchEnabled ? 'bg-brand-600' : 'bg-gray-200'}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${form.webSearchEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
+          </div>
+          <span className="text-[13px] text-text-primary">
+            {form.webSearchEnabled ? 'Enabled' : 'Disabled'}
+          </span>
+        </label>
       </div>
 
       <div className="flex items-center gap-3">

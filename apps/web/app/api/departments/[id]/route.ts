@@ -11,6 +11,7 @@ const updateSchema = z.object({
   llmModel: z.string().optional(),
   embedModel: z.string().optional(),
   slackWebhookUrl: z.string().url().or(z.literal('')).optional().nullable(),
+  webSearchEnabled: z.boolean().optional(),
 })
 
 type RouteContext = { params: { id: string } }

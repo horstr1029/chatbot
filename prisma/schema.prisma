@@ -19,6 +19,7 @@ model Department {
   widgetToken          String?   @unique
   widgetTokenExpiresAt DateTime?
   slackWebhookUrl      String?
+  webSearchEnabled     Boolean  @default(false)
   approvalChain   Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
