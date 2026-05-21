@@ -4,12 +4,13 @@ import { prisma } from '@/lib/db/client'
 import { deptMiddleware, requireRole } from '@/lib/auth/middleware'
 import { apiResponse, withErrorHandler } from '@/lib/api/response'
 import { hashPassword } from '@/lib/auth/password'
+import { generateTempPassword } from '@/lib/auth/tempPassword'
+import { sendWelcomeEmail } from '@/lib/email/mailer'
 import { z } from 'zod'
 
 const createSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
-  password: z.string().min(8),
   deptIds: z.array(z.string()).min(1, 'Assign at least one department'),
 })
 
@@ -48,7 +49,6 @@ export const POST = withErrorHandler(async (req) => {
 
   const existing = await prisma.user.findUnique({ where: { email: body.email.toLowerCase() } })
   if (existing) {
-    // Existing user — just add MANAGER role to specified depts
     await prisma.$transaction(
       body.deptIds.map((deptId) =>
         prisma.userDepartment.upsert({
@@ -61,7 +61,8 @@ export const POST = withErrorHandler(async (req) => {
     return apiResponse.success({ id: existing.id })
   }
 
-  const passwordHash = await hashPassword(body.password)
+  const tempPassword = generateTempPassword()
+  const passwordHash = await hashPassword(tempPassword)
 
   const manager = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
@@ -78,6 +79,10 @@ export const POST = withErrorHandler(async (req) => {
       )
     )
     return user
+  })
+
+  sendWelcomeEmail(manager.email, manager.name, tempPassword).catch((err) => {
+    process.stderr.write(`[email] Failed to send welcome email to ${manager.email}: ${err}\n`)
   })
 
   return apiResponse.success({ id: manager.id }, undefined, 201)

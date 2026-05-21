@@ -35,7 +35,6 @@ export function ManagersPanel({ managers, departments }: ManagersPanelProps) {
   // Create form state
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [selectedDepts, setSelectedDepts] = useState<string[]>([])
 
   // Edit form state
@@ -46,16 +45,16 @@ export function ManagersPanel({ managers, departments }: ManagersPanelProps) {
   }
 
   async function handleCreate() {
-    if (!name.trim() || !email.trim() || !password || selectedDepts.length === 0) return
+    if (!name.trim() || !email.trim() || selectedDepts.length === 0) return
     setLoading('create')
     await fetch('/api/managers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), email: email.trim(), password, deptIds: selectedDepts }),
+      body: JSON.stringify({ name: name.trim(), email: email.trim(), deptIds: selectedDepts }),
     })
     setLoading(null)
     setAdding(false)
-    setName(''); setEmail(''); setPassword(''); setSelectedDepts([])
+    setName(''); setEmail(''); setSelectedDepts([])
     router.refresh()
   }
 
@@ -195,17 +194,7 @@ export function ManagersPanel({ managers, departments }: ManagersPanelProps) {
               />
             </div>
           </div>
-          <div>
-            <label className="text-[13px] font-medium text-text-primary mb-1 block">Temporary password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
-              placeholder="Min. 8 characters"
-            />
-            <p className="text-[11px] text-text-muted mt-1">Manager will be prompted to change this on first login.</p>
-          </div>
+          <p className="text-[12px] text-text-muted -mt-1">A temporary password will be generated and emailed to the manager.</p>
           <div>
             <label className="text-[13px] font-medium text-text-primary mb-2 block">
               Assign departments <span className="text-red-500">*</span>
@@ -231,14 +220,14 @@ export function ManagersPanel({ managers, departments }: ManagersPanelProps) {
           </div>
           <div className="flex gap-2 pt-1">
             <button
-              disabled={!name.trim() || !email.trim() || password.length < 8 || selectedDepts.length === 0 || loading === 'create'}
+              disabled={!name.trim() || !email.trim() || selectedDepts.length === 0 || loading === 'create'}
               onClick={handleCreate}
               className="px-4 py-2 rounded-md bg-gray-900 text-white text-[13px] font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
             >
               {loading === 'create' ? 'Creating…' : 'Create manager'}
             </button>
             <button
-              onClick={() => { setAdding(false); setName(''); setEmail(''); setPassword(''); setSelectedDepts([]) }}
+              onClick={() => { setAdding(false); setName(''); setEmail(''); setSelectedDepts([]) }}
               className="px-4 py-2 text-[13px] text-text-secondary hover:text-text-primary"
             >
               Cancel
