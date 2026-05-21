@@ -7,7 +7,10 @@ import { z } from 'zod'
 
 const schema = z.object({ content: z.string().min(1).max(2000) })
 
-export const POST = withErrorHandler(async (req, { params }: { params: { id: string } }) => {
+type RouteContext = { params: { id: string } }
+
+export const POST = withErrorHandler(async (req, rawCtx) => {
+  const { params } = rawCtx as RouteContext
   const ctx = await deptMiddleware()
   const { content } = schema.parse(await req.json())
 
