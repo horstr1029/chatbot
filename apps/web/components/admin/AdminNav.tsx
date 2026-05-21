@@ -41,6 +41,7 @@ export function AdminNav({ deptName, role, pendingCount, incomingRequestsCount }
   }
 
   return (
+    <>
     <header className="bg-white border-b border-border">
       <div className="max-w-6xl mx-auto px-6 h-[52px] flex items-center gap-6">
         {role === 'SUPER_ADMIN' ? (
@@ -89,5 +90,6 @@ export function AdminNav({ deptName, role, pendingCount, incomingRequestsCount }
       </div>
     </header>
     <AdminHelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
+    </>
   )
 }

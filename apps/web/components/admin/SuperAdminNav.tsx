@@ -20,6 +20,7 @@ export function SuperAdminNav() {
   const [helpOpen, setHelpOpen] = useState(false)
 
   return (
+    <>
     <header className="bg-white border-b border-border">
       <div className="max-w-6xl mx-auto px-6 h-[52px] flex items-center gap-6">
         <span className="text-[14px] font-semibold text-text-primary mr-2">Super Admin</span>
@@ -55,5 +56,6 @@ export function SuperAdminNav() {
       </div>
     </header>
     <AdminHelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
+    </>
   )
 }
