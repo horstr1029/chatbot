@@ -7,17 +7,26 @@ interface DeptRow {
   id: string
   name: string
   llmModel: string
+  manager: { id: string; name: string | null; email: string } | null
   _count: { users: number; documentSources: number }
+}
+
+interface UserOption {
+  id: string
+  name: string | null
+  email: string
 }
 
 interface DepartmentsPanelProps {
   departments: DeptRow[]
+  users: UserOption[]
 }
 
-export function DepartmentsPanel({ departments }: DepartmentsPanelProps) {
+export function DepartmentsPanel({ departments, users }: DepartmentsPanelProps) {
   const router = useRouter()
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
+  const [managerId, setManagerId] = useState('')
   const [loading, setLoading] = useState<string | null>(null)
 
   async function handleManage(deptId: string) {
@@ -32,16 +41,17 @@ export function DepartmentsPanel({ departments }: DepartmentsPanelProps) {
   }
 
   async function handleAdd() {
-    if (!name.trim()) return
+    if (!name.trim() || !managerId) return
     setLoading('add')
     await fetch('/api/departments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim() }),
+      body: JSON.stringify({ name: name.trim(), managerId }),
     })
     setLoading(null)
     setAdding(false)
     setName('')
+    setManagerId('')
     router.refresh()
   }
 
@@ -62,7 +72,7 @@ export function DepartmentsPanel({ departments }: DepartmentsPanelProps) {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-surface-secondary">
-                {['Name', 'LLM model', 'Users', 'Sources', ''].map((h) => (
+                {['Name', 'Manager', 'LLM model', 'Users', 'Sources', ''].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-[12px] font-medium text-text-muted">{h}</th>
                 ))}
               </tr>
@@ -71,6 +81,13 @@ export function DepartmentsPanel({ departments }: DepartmentsPanelProps) {
               {departments.map((d) => (
                 <tr key={d.id} className="hover:bg-surface-secondary transition-colors">
                   <td className="px-4 py-3 text-[13px] font-medium text-text-primary">{d.name}</td>
+                  <td className="px-4 py-3 text-[12px] text-text-secondary">
+                    {d.manager ? (
+                      <span>{d.manager.name ?? d.manager.email}</span>
+                    ) : (
+                      <span className="text-amber-600 font-medium">None assigned</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-[12px] text-text-muted font-mono">{d.llmModel}</td>
                   <td className="px-4 py-3 text-[13px] text-text-secondary">{d._count.users}</td>
                   <td className="px-4 py-3 text-[13px] text-text-secondary">{d._count.documentSources}</td>
@@ -111,16 +128,36 @@ export function DepartmentsPanel({ departments }: DepartmentsPanelProps) {
               autoFocus
             />
           </div>
+          <div>
+            <label className="text-[13px] font-medium text-text-primary mb-1 block">
+              Manager <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={managerId}
+              onChange={(e) => setManagerId(e.target.value)}
+              className="w-full rounded-md border border-border px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
+            >
+              <option value="">Select a manager…</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name ? `${u.name} (${u.email})` : u.email}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-text-muted mt-1">
+              The manager will be added as a Dept Admin and receive all form submissions for this department.
+            </p>
+          </div>
           <div className="flex gap-2 pt-1">
             <button
-              disabled={!name.trim() || loading === 'add'}
+              disabled={!name.trim() || !managerId || loading === 'add'}
               onClick={handleAdd}
               className="px-4 py-2 rounded-md bg-gray-900 text-white text-[13px] font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
             >
               {loading === 'add' ? 'Creating…' : 'Create'}
             </button>
             <button
-              onClick={() => { setAdding(false); setName('') }}
+              onClick={() => { setAdding(false); setName(''); setManagerId('') }}
               className="px-4 py-2 text-[13px] text-text-secondary hover:text-text-primary"
             >
               Cancel

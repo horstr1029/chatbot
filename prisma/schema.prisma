@@ -11,6 +11,8 @@ datasource db {
 model Department {
   id              String   @id @default(cuid())
   name            String
+  managerId       String?
+  manager         User?    @relation("deptManager", fields: [managerId], references: [id])
   systemPrompt    String?  @db.Text
   llmModel        String   @default("mistral:7b-instruct")
   embedModel      String   @default("nomic-embed-text")
@@ -46,6 +48,7 @@ model User {
   deletedAt             DateTime?
 
   departments           UserDepartment[]
+  managedDepts          Department[]           @relation("deptManager")
   workflowRequests      WorkflowRequest[]      @relation("requestedBy")
   workflowApprovals     WorkflowRequest[]      @relation("approvedBy")
   chatSessions          ChatSession[]

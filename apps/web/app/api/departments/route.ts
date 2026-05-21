@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 const createSchema = z.object({
   name: z.string().min(1),
+  managerId: z.string().min(1),
   systemPrompt: z.string().optional(),
   llmModel: z.string().optional(),
   embedModel: z.string().optional(),
@@ -38,6 +39,23 @@ export const POST = withErrorHandler(async (req) => {
 
   const body = createSchema.parse(await req.json())
 
-  const dept = await prisma.department.create({ data: body })
+  const dept = await prisma.$transaction(async (tx) => {
+    const created = await tx.department.create({
+      data: {
+        name: body.name,
+        managerId: body.managerId,
+        systemPrompt: body.systemPrompt,
+        llmModel: body.llmModel,
+        embedModel: body.embedModel,
+      },
+    })
+    await tx.userDepartment.upsert({
+      where: { userId_deptId: { userId: body.managerId, deptId: created.id } },
+      create: { userId: body.managerId, deptId: created.id, role: 'DEPT_ADMIN' },
+      update: { role: 'DEPT_ADMIN' },
+    })
+    return created
+  })
+
   return apiResponse.success(dept, undefined, 201)
 })
