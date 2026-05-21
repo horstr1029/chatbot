@@ -93,16 +93,15 @@ export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) 
       return
     }
     setExpandedLeave(userId)
-    if (!leaveEdits[userId]) {
-      setLeaveEdits((prev) => ({
-        ...prev,
-        [userId]: {
-          yearlyAllocation: String(balance?.yearlyAllocation ?? 15),
-          monthlyAccrual: String(balance?.monthlyAccrual ?? 1.25),
-          balance: String(balance?.balance ?? 0),
-        },
-      }))
-    }
+    // Always re-initialize from current props so stale state is never shown
+    setLeaveEdits((prev) => ({
+      ...prev,
+      [userId]: {
+        yearlyAllocation: String(balance?.yearlyAllocation ?? 15),
+        monthlyAccrual: String(balance?.monthlyAccrual ?? 1.25),
+        balance: String(balance?.balance ?? 0),
+      },
+    }))
   }
 
   async function saveLeave(userId: string) {
