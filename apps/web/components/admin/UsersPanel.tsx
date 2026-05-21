@@ -21,7 +21,7 @@ interface UserRow {
   name: string | null
   email: string
   role: DeptRole
-  createdAt: Date
+  createdAt: string
   leaveBalance: LeaveBalance | null
 }
 

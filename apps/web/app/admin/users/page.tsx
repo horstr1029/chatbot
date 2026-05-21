@@ -37,7 +37,7 @@ export default async function UsersPage() {
     .map((m) => ({
       ...m.user,
       role: m.role,
-      createdAt: m.createdAt,
+      createdAt: m.createdAt.toISOString(),
       leaveBalance: balanceMap[m.user.id] ?? null,
     }))
 
