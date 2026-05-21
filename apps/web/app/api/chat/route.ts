@@ -224,7 +224,12 @@ export async function POST(req: Request) {
       { contextBlock: '', citations: [], avgScore: null }
 
     try {
-      const chunks = await retrieve(userMessage, dept)
+      const diagramMemberships = await prisma.userDepartment.findMany({
+        where: { userId: ctx.user_id },
+        select: { deptId: true },
+      })
+      const diagramExtraDeptIds = diagramMemberships.map((m) => m.deptId).filter((id) => id !== dept.id)
+      const chunks = await retrieve(userMessage, dept, diagramExtraDeptIds)
       if (chunks.length > 0) {
         diagramContext = buildContext(chunks)
       } else if (dept.webSearchEnabled) {
