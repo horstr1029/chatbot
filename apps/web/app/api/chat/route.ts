@@ -114,6 +114,21 @@ export async function POST(req: Request) {
     return result.toDataStreamResponse({ headers: { 'x-intent': 'CROSS_DEPT_REQUEST' } })
   }
 
+  // ── Leave balance query path ───────────────────────────────────
+  if (intent === 'LEAVE_BALANCE_QUERY') {
+    const { balance } = await accrueIfDue(ctx.user_id, ctx.dept_id)
+    const balanceText =
+      balance < 0
+        ? `You currently have a leave deficit of **${Math.abs(balance).toFixed(1)} day${Math.abs(balance).toFixed(1) !== '1.0' ? 's' : ''}**. You can still apply — it will be deducted from your future allocation.`
+        : `You currently have **${balance.toFixed(1)} day${balance.toFixed(1) !== '1.0' ? 's' : ''}** of leave available. To apply, just say "apply for leave".`
+    const result = await streamText({
+      model: ollamaProvider()('mistral:7b-instruct'),
+      messages: [{ role: 'user', content: balanceText }],
+      system: 'Repeat the message exactly as given, word for word.',
+    })
+    return result.toDataStreamResponse({ headers: { 'x-intent': intent } })
+  }
+
   // ── Form request path ──────────────────────────────────────────
   if (intent === 'FORM_REQUEST') {
     const formUser = await prisma.user.findUnique({
