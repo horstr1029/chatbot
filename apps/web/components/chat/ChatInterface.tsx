@@ -49,6 +49,8 @@ const SUGGESTED_QUESTIONS = (deptName: string) => [
   `What are the key contacts or resources for ${deptName}?`,
   `I'd like to apply for leave`,
   `How do I submit an expense claim?`,
+  `Create a wiring diagram for a door access control system`,
+  `Draw a flowchart for the ${deptName} approval process`,
 ]
 
 export function ChatInterface({
