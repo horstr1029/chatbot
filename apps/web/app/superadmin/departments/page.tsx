@@ -6,7 +6,10 @@ export default async function DepartmentsPage() {
     prisma.department.findMany({
       orderBy: { name: 'asc' },
       include: {
-        manager: { select: { id: true, name: true, email: true } },
+        members: {
+          where: { role: 'MANAGER' },
+          select: { user: { select: { id: true, name: true, email: true } } },
+        },
         _count: {
           select: {
             members: true,
@@ -26,7 +29,7 @@ export default async function DepartmentsPage() {
     id: d.id,
     name: d.name,
     llmModel: d.llmModel,
-    manager: d.manager,
+    managers: d.members.map((m) => m.user),
     _count: { users: d._count.members, documentSources: d._count.documentSources },
   }))
 

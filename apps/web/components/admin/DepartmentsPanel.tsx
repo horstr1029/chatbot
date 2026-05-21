@@ -7,7 +7,7 @@ interface DeptRow {
   id: string
   name: string
   llmModel: string
-  manager: { id: string; name: string | null; email: string } | null
+  managers: { id: string; name: string | null; email: string }[]
   _count: { users: number; documentSources: number }
 }
 
@@ -82,8 +82,8 @@ export function DepartmentsPanel({ departments, users }: DepartmentsPanelProps) 
                 <tr key={d.id} className="hover:bg-surface-secondary transition-colors">
                   <td className="px-4 py-3 text-[13px] font-medium text-text-primary">{d.name}</td>
                   <td className="px-4 py-3 text-[12px] text-text-secondary">
-                    {d.manager ? (
-                      <span>{d.manager.name ?? d.manager.email}</span>
+                    {d.managers.length > 0 ? (
+                      <span>{d.managers.map((m) => m.name ?? m.email).join(', ')}</span>
                     ) : (
                       <span className="text-amber-600 font-medium">None assigned</span>
                     )}
