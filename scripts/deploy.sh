@@ -50,7 +50,7 @@ echo "[4/6] Building Next.js app..."
 remote "cd $APP_DIR && npm run build"
 
 echo "[5/6] Copying static assets..."
-remote "cp -r $APP_DIR/.next/static $APP_DIR/.next/standalone/.next/static"
+remote "cp -r $APP_DIR/.next/static $APP_DIR/.next/standalone/.next/static && cp -r $APP_DIR/public $APP_DIR/.next/standalone/public"
 
 echo "[6/6] Restarting app..."
 remote "pm2 startOrReload ecosystem.config.js --update-env"
