@@ -16,7 +16,7 @@ export async function deptMiddleware(): Promise<AuthContext> {
   return {
     user_id: session.userId,
     dept_id: session.deptId ?? '',
-    role: session.role,
+    role: session.isSuperAdmin ? 'SUPER_ADMIN' : session.role,
   }
 }
 
