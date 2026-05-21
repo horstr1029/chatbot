@@ -14,12 +14,15 @@ export function countWorkdays(start: Date, end: Date): number {
   return count
 }
 
+const DEFAULT_LEAVE_TYPES = [
+  { type: 'Sick Leave', yearlyAllocation: 30, balance: 30 },
+  { type: 'Family Responsibility Leave', yearlyAllocation: 3, balance: 3 },
+]
+
 export async function getOrCreateBalance(userId: string, deptId: string) {
   return prisma.leaveBalance.upsert({
     where: { userId_deptId: { userId, deptId } },
-    // balance and lastAccrualDate left as defaults (0, null) so accrueIfDue
-    // initializes them to yearlyAllocation on first call.
-    create: { userId, deptId },
+    create: { userId, deptId, leaveTypes: DEFAULT_LEAVE_TYPES },
     update: {},
   })
 }

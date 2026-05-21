@@ -50,9 +50,14 @@ interface LeaveEdit {
 
 const defaultForm = { name: '', email: '', role: 'MEMBER' as DeptRole }
 
+const DEFAULT_LEAVE_TYPES: LeaveTypeEntry[] = [
+  { type: 'Sick Leave', yearlyAllocation: 30, balance: 30 },
+  { type: 'Family Responsibility Leave', yearlyAllocation: 3, balance: 3 },
+]
+
 function parseLeaveTypes(raw: unknown): LeaveTypeEntry[] {
-  if (!Array.isArray(raw)) return []
-  return raw.filter(
+  if (!Array.isArray(raw) || raw.length === 0) return DEFAULT_LEAVE_TYPES
+  const parsed = raw.filter(
     (e): e is LeaveTypeEntry =>
       e !== null &&
       typeof e === 'object' &&
@@ -60,6 +65,7 @@ function parseLeaveTypes(raw: unknown): LeaveTypeEntry[] {
       typeof (e as LeaveTypeEntry).balance === 'number' &&
       typeof (e as LeaveTypeEntry).yearlyAllocation === 'number',
   )
+  return parsed.length === 0 ? DEFAULT_LEAVE_TYPES : parsed
 }
 
 export function UsersPanel({ deptId, currentUserRole, users }: UsersPanelProps) {
