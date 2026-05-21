@@ -17,23 +17,26 @@ interface SidebarProps {
   activeSessionId: string | null
   onNewChat: () => void
   onSelectSession: (id: string) => void
+  onDeleteSession: (id: string) => void
+  onDeleteAll: () => void
   availableDepts: DeptOption[]
 }
 
 type SessionItem = Pick<ChatSession, 'id' | 'title' | 'updatedAt'>
 
-function SessionRow({ s, active, starred, onSelect, onStar }: {
+function SessionRow({ s, active, starred, onSelect, onStar, onDelete }: {
   s: SessionItem
   active: boolean
   starred: boolean
   onSelect: () => void
   onStar: (e: React.MouseEvent) => void
+  onDelete: (e: React.MouseEvent) => void
 }) {
   return (
     <div className="group relative flex items-center mb-0.5">
       <button
         onClick={onSelect}
-        className={`flex items-center gap-2 w-full pl-2.5 pr-7 py-1.5 rounded-md text-[13px] transition-colors ${
+        className={`flex items-center gap-2 w-full pl-2.5 pr-12 py-1.5 rounded-md text-[13px] transition-colors ${
           active ? 'bg-brand-50 text-brand-700 font-medium' : 'text-text-secondary hover:bg-surface-tertiary'
         }`}
       >
@@ -41,6 +44,15 @@ function SessionRow({ s, active, starred, onSelect, onStar }: {
         <span className="text-[11px] text-text-muted flex-shrink-0">
           {new Date(s.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
         </span>
+      </button>
+      <button
+        onClick={onDelete}
+        title="Delete"
+        className="absolute right-6 w-5 h-5 flex items-center justify-center rounded transition-all text-text-muted opacity-0 group-hover:opacity-100 hover:text-red-500"
+      >
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
       </button>
       <button
         onClick={onStar}
@@ -68,10 +80,13 @@ export function Sidebar({
   activeSessionId,
   onNewChat,
   onSelectSession,
+  onDeleteSession,
+  onDeleteAll,
   availableDepts,
 }: SidebarProps) {
   const router = useRouter()
   const [switching, setSwitching] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SessionItem[]>([])
@@ -224,17 +239,32 @@ export function Sidebar({
           <>
             <p className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide px-2 mb-1">Starred</p>
             {starredSessions.map((s) => (
-              <SessionRow key={s.id} s={s} active={s.id === activeSessionId} starred onSelect={() => handleSelect(s.id)} onStar={(e) => toggleStar(s.id, e)} />
+              <SessionRow key={s.id} s={s} active={s.id === activeSessionId} starred onSelect={() => handleSelect(s.id)} onStar={(e) => toggleStar(s.id, e)} onDelete={(e) => { e.stopPropagation(); onDeleteSession(s.id) }} />
             ))}
             <div className="border-t border-border my-2" />
-            <p className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide px-2 mb-1">Recent</p>
           </>
+        )}
+        {!searchOpen && (
+          <div className="flex items-center justify-between px-2 mb-1">
+            <p className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide">Recent</p>
+            {sessions.length > 0 && (
+              confirmClear ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-text-muted">Clear all?</span>
+                  <button onClick={() => { onDeleteAll(); setConfirmClear(false) }} className="text-[10px] text-red-600 hover:underline">Yes</button>
+                  <button onClick={() => setConfirmClear(false)} className="text-[10px] text-text-muted hover:underline">No</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmClear(true)} className="text-[10px] text-text-muted hover:text-red-500 transition-colors">Clear all</button>
+              )
+            )}
+          </div>
         )}
         {displayedSessions.length === 0 && !searchOpen && (
           <p className="text-[12px] text-text-muted px-2">No conversations yet</p>
         )}
         {(searchOpen ? displayedSessions : unstarredSessions).map((s) => (
-          <SessionRow key={s.id} s={s} active={s.id === activeSessionId} starred={starred.has(s.id)} onSelect={() => handleSelect(s.id)} onStar={(e) => toggleStar(s.id, e)} />
+          <SessionRow key={s.id} s={s} active={s.id === activeSessionId} starred={starred.has(s.id)} onSelect={() => handleSelect(s.id)} onStar={(e) => toggleStar(s.id, e)} onDelete={(e) => { e.stopPropagation(); onDeleteSession(s.id) }} />
         ))}
       </div>
 

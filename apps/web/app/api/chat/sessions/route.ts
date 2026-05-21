@@ -29,6 +29,13 @@ export const GET = withErrorHandler(async () => {
   return apiResponse.success(sessions)
 })
 
+// DELETE — delete all sessions for the current user
+export const DELETE = withErrorHandler(async () => {
+  const ctx = await deptMiddleware()
+  await prisma.chatSession.deleteMany({ where: { userId: ctx.user_id } })
+  return apiResponse.success({ deleted: true })
+})
+
 // POST — create or update a session
 export const POST = withErrorHandler(async (req) => {
   const ctx = await deptMiddleware()

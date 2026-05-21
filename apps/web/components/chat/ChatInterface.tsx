@@ -226,6 +226,18 @@ export function ChatInterface({
     setActiveSessionId(id)
   }
 
+  async function handleDeleteSession(id: string) {
+    await fetch(`/api/chat/sessions/${id}`, { method: 'DELETE' })
+    setSessions((prev) => prev.filter((s) => s.id !== id))
+    if (sessionIdRef.current === id) handleNewChat()
+  }
+
+  async function handleDeleteAll() {
+    await fetch('/api/chat/sessions', { method: 'DELETE' })
+    setSessions([])
+    handleNewChat()
+  }
+
   function handleNewChat() {
     setMessages([])
     setInput('')
@@ -320,6 +332,8 @@ export function ChatInterface({
         activeSessionId={activeSessionId}
         onNewChat={handleNewChat}
         onSelectSession={handleSelectSession}
+        onDeleteSession={handleDeleteSession}
+        onDeleteAll={handleDeleteAll}
         availableDepts={availableDepts}
       />
 
